@@ -8,9 +8,6 @@
   <link rel="stylesheet" href="general.css">
 
   <style>
-    /* ==========================================================================
-       ESTILOS ESPECÍFICOS DEL GESTOR (Modo Oscuro)
-       ========================================================================== */
     :root {
       --bg-body: #0b0f17;
       --bg-panel: #131b2e;
@@ -35,10 +32,8 @@
 
     .dashboard-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
     
-    /* Panel de Importación */
     .import-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; height: fit-content; }
     
-    /* Input de Archivo Personalizado */
     .file-drop-area {
       position: relative;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -48,35 +43,20 @@
     }
     .file-drop-area:hover { border-color: var(--primary); background: #18223d; }
     .file-msg { font-size: 0.85rem; margin-top: 8px; font-weight: 600; }
-    .file-input {
-      position: absolute; left: 0; top: 0; height: 100%; width: 100%;
-      cursor: pointer; opacity: 0;
-    }
+    .file-input { position: absolute; left: 0; top: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
 
-    /* Tabla de Inventario */
     .table-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; }
     .table-dark { width: 100%; border-collapse: collapse; margin-top: 16px; color: var(--text-main); }
     .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     
-    /* Botones y Selects oscuros */
-    .select-dark { 
-      background: #0f172a; color: white; border: 1px solid var(--border); 
-      padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; 
-    }
+    .select-dark { background: #0f172a; color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; }
     input[type="date"] { background: #0f172a; color: white; color-scheme: dark; margin-bottom: 16px;}
     
-    .btn-edit-alias { 
-      background: none; border: none; font-size: 1rem; cursor: pointer; 
-      opacity: 0.5; transition: 0.2s; margin-left: 8px; 
-    }
+    .btn-edit-alias { background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.5; transition: 0.2s; margin-left: 8px; }
     .btn-edit-alias:hover { opacity: 1; transform: scale(1.1); }
 
-    /* Semáforo de Estado */
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-      border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-    }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
     .status-green { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
     .status-yellow { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
     .status-red { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
@@ -108,11 +88,10 @@
 
   <div class="dashboard-layout">
     
-    <!-- LECTOR INTELIGENTE DE ARCHIVOS CSV -->
     <div class="import-panel">
       <h2>Importar Archivo de Compra</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
-        Sube el archivo CSV de ProwireUSA o Mouser. El sistema auto-detectará la fecha y extraerá las cantidades.
+        Sube el archivo CSV de ProwireUSA o Mouser.
       </p>
 
       <label>Fecha (Opcional - Se auto detecta del CSV)</label>
@@ -132,12 +111,11 @@
       <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
     </div>
 
-    <!-- PANEL DE ALERTAS Y STOCK -->
     <div class="table-panel">
       <div class="flex-between">
         <h2>Radar de Inventario</h2>
         
-        <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center;">
           <label style="margin: 0;">Frecuencia:</label>
           <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()">
             <option value="1">Diario</option>
@@ -146,7 +124,13 @@
             <option value="180">Semestral</option>
             <option value="365">Anual</option>
           </select>
-          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Restablecer Base</button>
+          
+          <!-- Botones de Backup -->
+          <button class="btn-secondary btn-sm" onclick="exportData()" title="Descargar Backup de Inventario">⬇️</button>
+          <input type="file" id="importBackupFile" style="display:none" accept=".json" onchange="importData(event)">
+          <button class="btn-secondary btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Subir Backup de Inventario">⬆️</button>
+          
+          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Borrar Base</button>
         </div>
       </div>
 
@@ -172,11 +156,8 @@
 <script>
   let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
 
-  function init() {
-    renderInventory();
-  }
+  function init() { renderInventory(); }
 
-  // --- ACTUALIZAR MENSAJE DEL ARCHIVO ---
   function updateFileName() {
     const input = document.getElementById('invoiceFile');
     const msg = document.getElementById('fileMsg');
@@ -189,7 +170,6 @@
     }
   }
 
-  // --- LECTOR DE ARCHIVOS (FILE READER API) ---
   function processInvoiceFile() {
     const fileInput = document.getElementById('invoiceFile');
     if (fileInput.files.length === 0) { alert("Por favor, selecciona un archivo CSV primero."); return; }
@@ -204,31 +184,31 @@
     reader.readAsText(file);
   }
 
-  // --- EL CEREBRO: PROCESADOR INTELIGENTE DE TEXTO ---
   function processExtractedText(text) {
+    // 1. SANITIZACIÓN: Eliminar absolutamente todas las comillas (simples y dobles) del texto
+    const cleanText = text.replace(/["']/g, '');
+
     let dateStr = document.getElementById('invoiceDate').value;
     
-    // 1. AUTO-DETECTAR FECHA DE PROWIREUSA (Ej: "Date   08/21/2026")
+    // 2. BUSCAR FECHA EN TEXTO LIMPIO
     const dateRegex = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
-    const dateMatch = dateRegex.exec(text);
+    const dateMatch = dateRegex.exec(cleanText);
     if (dateMatch) {
-      // ProwireUSA usa formato MM/DD/YYYY, el input date exige YYYY-MM-DD
       dateStr = `${dateMatch[3]}-${dateMatch[1]}-${dateMatch[2]}`;
-      // Actualizamos la interfaz para que el usuario vea la fecha detectada
       document.getElementById('invoiceDate').value = dateStr;
     }
 
     if (!dateStr) { 
-      alert("No se pudo detectar la fecha en el archivo. Por favor, selecciona la fecha manualmente en el calendario de la izquierda."); 
+      alert("No se pudo detectar la fecha. Selecciónala manualmente."); 
       return; 
     }
 
-    // 2. EXTRAER COMPONENTES (SKU + Cantidad)
+    // 3. EXTRACCIÓN (Ahora funciona perfecto porque las comillas iniciales ya no existen)
     const regex = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
     let match;
     let itemsFound = 0;
 
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = regex.exec(cleanText)) !== null) {
       const sku = match[1];
       const qty = parseInt(match[2].replace(/,/g, ''), 10); 
       addPurchase(sku, qty, dateStr);
@@ -266,7 +246,6 @@
     }
   }
 
-  // --- GESTOR DE ALIAS ---
   function editAlias(sku) {
     const currentAlias = inventory[sku].alias || "";
     const newAlias = prompt(`Escribe un nombre fácil de recordar para:\n${sku}`, currentAlias);
@@ -278,7 +257,6 @@
     }
   }
 
-  // --- MOTOR PREDICTIVO ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
     
@@ -297,7 +275,7 @@
       totalConsumed += history[i].qty;
     }
 
-    const dailyBurn = totalConsumed / totalDays; // Número flotante real
+    const dailyBurn = totalConsumed / totalDays;
     const lastQty = history[history.length - 1].qty;
     const daysSinceLastBuy = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
     let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
@@ -329,7 +307,6 @@
       return;
     }
 
-    // Configuración de visualización de tiempo (Mensual por defecto)
     const frameSelect = document.getElementById('timeFrameSelect');
     const frameDays = parseInt(frameSelect.value);
     const frameLabels = { 1: 'día', 30: 'mes', 60: 'bimestre', 180: 'semestre', 365: 'año' };
@@ -341,12 +318,10 @@
       const stats = calculatePredictiveStatus(item);
       const buyCount = item.history.length;
       
-      // Armado de visualización con Alias
       const displayName = item.alias 
         ? `<strong style="color: #fff; font-size:1.05rem;">${item.alias}</strong><br><span style="color: #64748b; font-size:0.8rem;">${item.sku}</span>` 
         : `<strong style="color: #fff;">${item.sku}</strong>`;
 
-      // Armado de visualización de consumo
       const displayBurn = stats.dailyBurn > 0 
         ? `${(stats.dailyBurn * frameDays).toFixed(1)} unid / ${timeLabel}`
         : '-';
@@ -371,6 +346,34 @@
     });
   }
 
+  // --- FUNCIONES DE BACKUP (JSON) ---
+  function exportData() {
+    const dataStr = JSON.stringify(inventory, null, 2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `LoomTech_Insumos_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+
+  function importData(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        inventory = JSON.parse(e.target.result);
+        localStorage.setItem('loomtech_inventory', JSON.stringify(inventory));
+        renderInventory();
+        alert("¡Base de datos importada con éxito!");
+      } catch(err) {
+        alert("Error al leer el archivo JSON de backup.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
   function clearInventory() {
     if(confirm("ATENCIÓN: ¿Estás seguro de borrar toda la base de datos predictiva de insumos?")) {
       localStorage.removeItem('loomtech_inventory');
@@ -378,11 +381,6 @@
       renderInventory();
     }
   }
-
-  init();
-</script>
-</body>
-</html>
 
   init();
 </script>
