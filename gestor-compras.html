@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestor Predictivo de Insumos - LoomTech</title>
   
-  <!-- Vinculamos el CSS General -->
   <link rel="stylesheet" href="general.css">
 
   <style>
@@ -22,7 +21,7 @@
 
     body { background: var(--bg-body); display: flex; flex-direction: column; }
     h2, h3 { color: #f8fafc; }
-    label { color: #cbd5e1; }
+    label { color: #cbd5e1; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px; }
     
     .main-header {
       background: var(--bg-panel); border: 1px solid var(--border);
@@ -38,10 +37,20 @@
     
     /* Panel de Importación */
     .import-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; height: fit-content; }
-    .textarea-code {
-      font-family: monospace; font-size: 0.8rem; background: #070a10; color: #34d399;
-      border: 1px solid var(--border); border-radius: 6px; padding: 12px; width: 100%;
-      height: 180px; resize: vertical; margin-top: 8px;
+    
+    /* Input de Archivo Personalizado */
+    .file-drop-area {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 100%; height: 140px; margin-top: 8px; margin-bottom: 20px;
+      border: 2px dashed #334155; border-radius: 8px; background: #0f172a;
+      transition: 0.2s; text-align: center; color: var(--text-muted);
+    }
+    .file-drop-area:hover { border-color: var(--primary); background: #18223d; }
+    .file-msg { font-size: 0.85rem; margin-top: 8px; font-weight: 600; }
+    .file-input {
+      position: absolute; left: 0; top: 0; height: 100%; width: 100%;
+      cursor: pointer; opacity: 0;
     }
 
     /* Tabla de Inventario */
@@ -50,6 +59,19 @@
     .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     
+    /* Botones y Selects oscuros */
+    .select-dark { 
+      background: #0f172a; color: white; border: 1px solid var(--border); 
+      padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; 
+    }
+    input[type="date"] { background: #0f172a; color: white; color-scheme: dark; margin-bottom: 16px;}
+    
+    .btn-edit-alias { 
+      background: none; border: none; font-size: 1rem; cursor: pointer; 
+      opacity: 0.5; transition: 0.2s; margin-left: 8px; 
+    }
+    .btn-edit-alias:hover { opacity: 1; transform: scale(1.1); }
+
     /* Semáforo de Estado */
     .status-badge {
       display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
@@ -66,12 +88,7 @@
     .status-red .pulse-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
     .status-gray .pulse-dot { background: #94a3b8; }
 
-    /* Fix para inputs en fondo oscuro */
-    input[type="date"] { background: #0f172a; color: white; color-scheme: dark; }
-
-    @media (max-width: 900px) {
-      .dashboard-layout { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -91,20 +108,26 @@
 
   <div class="dashboard-layout">
     
-    <!-- LECTOR INTELIGENTE DE FACTURAS -->
+    <!-- LECTOR INTELIGENTE DE ARCHIVOS CSV -->
     <div class="import-panel">
-      <h2>Importar Factura</h2>
+      <h2>Importar Archivo de Compra</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
-        Copia y pega el texto crudo del CSV/PDF de tu proveedor. El sistema extraerá automáticamente los números de parte (SKU) y las cantidades.
+        Sube el archivo CSV de ProwireUSA o Mouser. El sistema auto-detectará la fecha y extraerá las cantidades.
       </p>
 
-      <label>Fecha de la Compra / Invoice Date</label>
-      <input type="date" id="invoiceDate" style="margin-bottom: 16px;">
+      <label>Fecha (Opcional - Se auto detecta del CSV)</label>
+      <input type="date" id="invoiceDate">
 
-      <label>Pegar texto de la factura (CSV/PDF)</label>
-      <textarea id="invoiceText" class="textarea-code" placeholder="Ej:&#10;1  DR-25-3/16-0-UK   328   0  FT...&#10;7  M22759/32-22-9  1,000  0  FT..."></textarea>
+      <label>Cargar Archivo CSV</label>
+      <div class="file-drop-area">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:36px; height:36px; color:#64748b;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+        </svg>
+        <span class="file-msg" id="fileMsg">Haz clic o arrastra tu archivo .csv aquí</span>
+        <input class="file-input" type="file" id="invoiceFile" accept=".csv, .txt" onchange="updateFileName()">
+      </div>
 
-      <button type="button" class="btn btn-block" onclick="processInvoiceText()">Escanear y Procesar Compras</button>
+      <button type="button" class="btn btn-block" onclick="processInvoiceFile()">Leer Archivo y Procesar</button>
       
       <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
     </div>
@@ -113,16 +136,27 @@
     <div class="table-panel">
       <div class="flex-between">
         <h2>Radar de Inventario</h2>
-        <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Restablecer Base</button>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <label style="margin: 0;">Frecuencia:</label>
+          <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()">
+            <option value="1">Diario</option>
+            <option value="30" selected>Mensual</option>
+            <option value="60">Bimestral</option>
+            <option value="180">Semestral</option>
+            <option value="365">Anual</option>
+          </select>
+          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Restablecer Base</button>
+        </div>
       </div>
 
       <table class="table-dark">
         <thead>
           <tr>
-            <th>SKU / Componente</th>
-            <th>Compras</th>
-            <th>Consumo Diario</th>
-            <th>Stock Estimado</th>
+            <th>SKU / Alias</th>
+            <th>Historial</th>
+            <th>Consumo Estimado</th>
+            <th>Stock Proyecto</th>
             <th>Estado Actual</th>
           </tr>
         </thead>
@@ -139,47 +173,84 @@
   let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
 
   function init() {
-    document.getElementById('invoiceDate').valueAsDate = new Date();
     renderInventory();
   }
 
-  // --- EL CEREBRO: PROCESADOR INTELIGENTE DE TEXTO ---
-  function processInvoiceText() {
-    const text = document.getElementById('invoiceText').value;
-    const dateStr = document.getElementById('invoiceDate').value;
-    if (!text.trim() || !dateStr) { alert("Falta la fecha o el texto de la factura."); return; }
+  // --- ACTUALIZAR MENSAJE DEL ARCHIVO ---
+  function updateFileName() {
+    const input = document.getElementById('invoiceFile');
+    const msg = document.getElementById('fileMsg');
+    if(input.files && input.files.length > 0) {
+      msg.innerText = `Archivo listo: ${input.files[0].name}`;
+      msg.style.color = '#34d399';
+    } else {
+      msg.innerText = 'Haz clic o arrastra tu archivo .csv aquí';
+      msg.style.color = 'var(--text-muted)';
+    }
+  }
 
-    // Expresión Regular calibrada para el formato de ProWireUSA
-    // Busca: "Numero" + "espacios" + "SKU (Letras/Num/Guiones/Barras)" + "espacios" + "Cantidad (Num/Comas)"
+  // --- LECTOR DE ARCHIVOS (FILE READER API) ---
+  function processInvoiceFile() {
+    const fileInput = document.getElementById('invoiceFile');
+    if (fileInput.files.length === 0) { alert("Por favor, selecciona un archivo CSV primero."); return; }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const fileText = e.target.result;
+      processExtractedText(fileText);
+    };
+    reader.readAsText(file);
+  }
+
+  // --- EL CEREBRO: PROCESADOR INTELIGENTE DE TEXTO ---
+  function processExtractedText(text) {
+    let dateStr = document.getElementById('invoiceDate').value;
+    
+    // 1. AUTO-DETECTAR FECHA DE PROWIREUSA (Ej: "Date   08/21/2026")
+    const dateRegex = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
+    const dateMatch = dateRegex.exec(text);
+    if (dateMatch) {
+      // ProwireUSA usa formato MM/DD/YYYY, el input date exige YYYY-MM-DD
+      dateStr = `${dateMatch[3]}-${dateMatch[1]}-${dateMatch[2]}`;
+      // Actualizamos la interfaz para que el usuario vea la fecha detectada
+      document.getElementById('invoiceDate').value = dateStr;
+    }
+
+    if (!dateStr) { 
+      alert("No se pudo detectar la fecha en el archivo. Por favor, selecciona la fecha manualmente en el calendario de la izquierda."); 
+      return; 
+    }
+
+    // 2. EXTRAER COMPONENTES (SKU + Cantidad)
     const regex = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
     let match;
     let itemsFound = 0;
 
-    // Escanea línea por línea buscando coincidencias
     while ((match = regex.exec(text)) !== null) {
       const sku = match[1];
-      // Quita comas a las cantidades grandes (Ej: 1,000 -> 1000)
       const qty = parseInt(match[2].replace(/,/g, ''), 10); 
-      
       addPurchase(sku, qty, dateStr);
       itemsFound++;
     }
 
     if (itemsFound > 0) {
       const res = document.getElementById('importResult');
-      res.innerText = `¡Éxito! Se escanearon y sumaron ${itemsFound} componentes al radar.`;
+      res.innerText = `¡Éxito! Fecha detectada: ${dateStr}. Se sumaron ${itemsFound} componentes.`;
       res.style.color = '#34d399';
       res.style.display = 'block';
-      document.getElementById('invoiceText').value = ''; // Limpia la caja
       
-      // Guarda en disco y recarga tabla
+      document.getElementById('invoiceFile').value = ''; 
+      updateFileName();
+      
       localStorage.setItem('loomtech_inventory', JSON.stringify(inventory));
       renderInventory();
       
-      setTimeout(() => res.style.display = 'none', 4000);
+      setTimeout(() => res.style.display = 'none', 5000);
     } else {
       const res = document.getElementById('importResult');
-      res.innerText = `No se detectaron productos válidos. Verifica el texto pegado.`;
+      res.innerText = `No se detectaron productos. Revisa el formato del archivo.`;
       res.style.color = '#f87171';
       res.style.display = 'block';
     }
@@ -187,58 +258,53 @@
 
   function addPurchase(sku, qty, dateStr) {
     if (!inventory[sku]) {
-      inventory[sku] = { sku: sku, history: [] };
+      inventory[sku] = { sku: sku, alias: "", history: [] };
     }
-    // Evita duplicar la misma compra el mismo día por error de clic
     const exists = inventory[sku].history.find(h => h.date === dateStr && h.qty === qty);
     if (!exists) {
       inventory[sku].history.push({ date: dateStr, qty: qty });
     }
   }
 
-  // --- MOTOR PREDICTIVO (Calcula consumos y proyecta stock) ---
+  // --- GESTOR DE ALIAS ---
+  function editAlias(sku) {
+    const currentAlias = inventory[sku].alias || "";
+    const newAlias = prompt(`Escribe un nombre fácil de recordar para:\n${sku}`, currentAlias);
+    
+    if (newAlias !== null) {
+      inventory[sku].alias = newAlias.trim();
+      localStorage.setItem('loomtech_inventory', JSON.stringify(inventory));
+      renderInventory();
+    }
+  }
+
+  // --- MOTOR PREDICTIVO ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Si solo hay 1 compra, no podemos proyectar el ritmo de gasto
     if (history.length < 2) {
-      const lastBuy = history[0];
-      return { 
-        dailyBurn: 0, 
-        estStock: 'N/A (Faltan datos)', 
-        daysLeft: 999, 
-        badge: 'status-gray', 
-        statusText: 'Aprendiendo...' 
-      };
+      return { dailyBurn: 0, estStock: 'N/A', daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
     }
 
-    // Calcular días totales entre la primera y la última compra
     const firstDate = new Date(history[0].date);
     const lastDate = new Date(history[history.length - 1].date);
     const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
 
     if (totalDays <= 0) return { dailyBurn: 0, estStock: 'N/A', daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
 
-    // Calcular cantidad total consumida (Suma de todo EXCEPTO la última compra)
     let totalConsumed = 0;
     for (let i = 0; i < history.length - 1; i++) {
       totalConsumed += history[i].qty;
     }
 
-    // Tasa de consumo diario (Burn Rate)
-    const dailyBurn = totalConsumed / totalDays;
-    
-    // Stock actual estimado = (Última cantidad comprada) - (Gasto desde esa fecha hasta hoy)
+    const dailyBurn = totalConsumed / totalDays; // Número flotante real
     const lastQty = history[history.length - 1].qty;
     const daysSinceLastBuy = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
     let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
     
     if (estStock < 0) estStock = 0;
-
-    // Días restantes hasta llegar a cero
     const daysLeft = estStock / dailyBurn;
 
-    // Lógica del semáforo
     let badge = 'status-green';
     let statusText = 'En Stock';
 
@@ -247,16 +313,10 @@
       statusText = 'Urgente (Comprar)';
     } else if (daysLeft <= 25) {
       badge = 'status-yellow';
-      statusText = 'Próximo a Agotarse';
+      statusText = 'Alerta Stock';
     }
 
-    return { 
-      dailyBurn: dailyBurn.toFixed(2), 
-      estStock: Math.floor(estStock), 
-      daysLeft: Math.floor(daysLeft), 
-      badge: badge, 
-      statusText: statusText 
-    };
+    return { dailyBurn: dailyBurn, estStock: Math.floor(estStock), badge: badge, statusText: statusText };
   }
 
   function renderInventory() {
@@ -265,22 +325,42 @@
     
     const keys = Object.keys(inventory);
     if (keys.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">El radar está vacío. Escanea tu primera factura.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">El radar está vacío. Sube tu primer archivo CSV.</td></tr>';
       return;
     }
 
-    // Convertir a array para renderizar
+    // Configuración de visualización de tiempo (Mensual por defecto)
+    const frameSelect = document.getElementById('timeFrameSelect');
+    const frameDays = parseInt(frameSelect.value);
+    const frameLabels = { 1: 'día', 30: 'mes', 60: 'bimestre', 180: 'semestre', 365: 'año' };
+    const timeLabel = frameLabels[frameDays];
+
     const itemsList = keys.map(k => inventory[k]);
     
     itemsList.forEach(item => {
       const stats = calculatePredictiveStatus(item);
       const buyCount = item.history.length;
       
+      // Armado de visualización con Alias
+      const displayName = item.alias 
+        ? `<strong style="color: #fff; font-size:1.05rem;">${item.alias}</strong><br><span style="color: #64748b; font-size:0.8rem;">${item.sku}</span>` 
+        : `<strong style="color: #fff;">${item.sku}</strong>`;
+
+      // Armado de visualización de consumo
+      const displayBurn = stats.dailyBurn > 0 
+        ? `${(stats.dailyBurn * frameDays).toFixed(1)} unid / ${timeLabel}`
+        : '-';
+      
       const row = `<tr>
-        <td style="font-weight: 600; color: #fff;">${item.sku}</td>
-        <td>${buyCount} facturas</td>
-        <td style="color: #94a3b8;">${stats.dailyBurn > 0 ? stats.dailyBurn + ' unid/día' : '-'}</td>
-        <td style="font-weight: bold; font-size: 1.05rem;">${stats.estStock}</td>
+        <td>
+          <div style="display:flex; align-items: center;">
+            <div>${displayName}</div>
+            <button class="btn-edit-alias" onclick="editAlias('${item.sku}')" title="Asignar Alias">✏️</button>
+          </div>
+        </td>
+        <td style="color: #94a3b8;">${buyCount} facturas</td>
+        <td style="color: #94a3b8; font-family: monospace; font-size: 0.95rem;">${displayBurn}</td>
+        <td style="font-weight: bold; font-size: 1.1rem; color: #fff;">${stats.estStock}</td>
         <td>
           <div class="status-badge ${stats.badge}">
             <span class="pulse-dot"></span> ${stats.statusText}
@@ -298,6 +378,11 @@
       renderInventory();
     }
   }
+
+  init();
+</script>
+</body>
+</html>
 
   init();
 </script>
