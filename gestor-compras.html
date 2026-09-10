@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor Predictivo de Insumos - LoomTech</title>
+  
+  <!-- Vinculamos el CSS General -->
+  <link rel="stylesheet" href="general.css">
+
+  <style>
+    /* ==========================================================================
+       ESTILOS ESPECÍFICOS DEL GESTOR (Modo Oscuro)
+       ========================================================================== */
+    :root {
+      --bg-body: #0b0f17;
+      --bg-panel: #131b2e;
+      --border: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body { background: var(--bg-body); display: flex; flex-direction: column; }
+    h2, h3 { color: #f8fafc; }
+    label { color: #cbd5e1; }
+    
+    .main-header {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      padding: 20px 28px; border-radius: 12px; margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-brand { display: flex; align-items: center; gap: 20px; }
+    .header-logo { width: 56px; height: 56px; object-fit: contain; }
+    .header-title h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
+    .header-title p { margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
+
+    .dashboard-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
+    
+    /* Panel de Importación */
+    .import-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; height: fit-content; }
+    .textarea-code {
+      font-family: monospace; font-size: 0.8rem; background: #070a10; color: #34d399;
+      border: 1px solid var(--border); border-radius: 6px; padding: 12px; width: 100%;
+      height: 180px; resize: vertical; margin-top: 8px;
+    }
+
+    /* Tabla de Inventario */
+    .table-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; }
+    .table-dark { width: 100%; border-collapse: collapse; margin-top: 16px; color: var(--text-main); }
+    .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
+    .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    
+    /* Semáforo de Estado */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    }
+    .status-green { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-yellow { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-red { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-gray { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-green .pulse-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .status-yellow .pulse-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+    .status-red .pulse-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
+    .status-gray .pulse-dot { background: #94a3b8; }
+
+    /* Fix para inputs en fondo oscuro */
+    input[type="date"] { background: #0f172a; color: white; color-scheme: dark; }
+
+    @media (max-width: 900px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1200px;">
+  
+  <div class="main-header">
+    <div class="header-brand">
+      <img src="logo-transparente.webp" alt="LoomTech" class="header-logo" onerror="this.style.display='none'">
+      <div class="header-title">
+        <h1>Gestor de Insumos & Radar de Compras</h1>
+        <p>Sistema Predictivo de Stock (Burn Rate)</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Hub</a>
+  </div>
+
+  <div class="dashboard-layout">
+    
+    <!-- LECTOR INTELIGENTE DE FACTURAS -->
+    <div class="import-panel">
+      <h2>Importar Factura</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+        Copia y pega el texto crudo del CSV/PDF de tu proveedor. El sistema extraerá automáticamente los números de parte (SKU) y las cantidades.
+      </p>
+
+      <label>Fecha de la Compra / Invoice Date</label>
+      <input type="date" id="invoiceDate" style="margin-bottom: 16px;">
+
+      <label>Pegar texto de la factura (CSV/PDF)</label>
+      <textarea id="invoiceText" class="textarea-code" placeholder="Ej:&#10;1  DR-25-3/16-0-UK   328   0  FT...&#10;7  M22759/32-22-9  1,000  0  FT..."></textarea>
+
+      <button type="button" class="btn btn-block" onclick="processInvoiceText()">Escanear y Procesar Compras</button>
+      
+      <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
+    </div>
+
+    <!-- PANEL DE ALERTAS Y STOCK -->
+    <div class="table-panel">
+      <div class="flex-between">
+        <h2>Radar de Inventario</h2>
+        <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Restablecer Base</button>
+      </div>
+
+      <table class="table-dark">
+        <thead>
+          <tr>
+            <th>SKU / Componente</th>
+            <th>Compras</th>
+            <th>Consumo Diario</th>
+            <th>Stock Estimado</th>
+            <th>Estado Actual</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryTableBody">
+          <!-- Se llena con JS -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
+
+  function init() {
+    document.getElementById('invoiceDate').valueAsDate = new Date();
+    renderInventory();
+  }
+
+  // --- EL CEREBRO: PROCESADOR INTELIGENTE DE TEXTO ---
+  function processInvoiceText() {
+    const text = document.getElementById('invoiceText').value;
+    const dateStr = document.getElementById('invoiceDate').value;
+    if (!text.trim() || !dateStr) { alert("Falta la fecha o el texto de la factura."); return; }
+
+    // Expresión Regular calibrada para el formato de ProWireUSA
+    // Busca: "Numero" + "espacios" + "SKU (Letras/Num/Guiones/Barras)" + "espacios" + "Cantidad (Num/Comas)"
+    const regex = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
+    let match;
+    let itemsFound = 0;
+
+    // Escanea línea por línea buscando coincidencias
+    while ((match = regex.exec(text)) !== null) {
+      const sku = match[1];
+      // Quita comas a las cantidades grandes (Ej: 1,000 -> 1000)
+      const qty = parseInt(match[2].replace(/,/g, ''), 10); 
+      
+      addPurchase(sku, qty, dateStr);
+      itemsFound++;
+    }
+
+    if (itemsFound > 0) {
+      const res = document.getElementById('importResult');
+      res.innerText = `¡Éxito! Se escanearon y sumaron ${itemsFound} componentes al radar.`;
+      res.style.color = '#34d399';
+      res.style.display = 'block';
+      document.getElementById('invoiceText').value = ''; // Limpia la caja
+      
+      // Guarda en disco y recarga tabla
+      localStorage.setItem('loomtech_inventory', JSON.stringify(inventory));
+      renderInventory();
+      
+      setTimeout(() => res.style.display = 'none', 4000);
+    } else {
+      const res = document.getElementById('importResult');
+      res.innerText = `No se detectaron productos válidos. Verifica el texto pegado.`;
+      res.style.color = '#f87171';
+      res.style.display = 'block';
+    }
+  }
+
+  function addPurchase(sku, qty, dateStr) {
+    if (!inventory[sku]) {
+      inventory[sku] = { sku: sku, history: [] };
+    }
+    // Evita duplicar la misma compra el mismo día por error de clic
+    const exists = inventory[sku].history.find(h => h.date === dateStr && h.qty === qty);
+    if (!exists) {
+      inventory[sku].history.push({ date: dateStr, qty: qty });
+    }
+  }
+
+  // --- MOTOR PREDICTIVO (Calcula consumos y proyecta stock) ---
+  function calculatePredictiveStatus(item) {
+    const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Si solo hay 1 compra, no podemos proyectar el ritmo de gasto
+    if (history.length < 2) {
+      const lastBuy = history[0];
+      return { 
+        dailyBurn: 0, 
+        estStock: 'N/A (Faltan datos)', 
+        daysLeft: 999, 
+        badge: 'status-gray', 
+        statusText: 'Aprendiendo...' 
+      };
+    }
+
+    // Calcular días totales entre la primera y la última compra
+    const firstDate = new Date(history[0].date);
+    const lastDate = new Date(history[history.length - 1].date);
+    const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
+
+    if (totalDays <= 0) return { dailyBurn: 0, estStock: 'N/A', daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
+
+    // Calcular cantidad total consumida (Suma de todo EXCEPTO la última compra)
+    let totalConsumed = 0;
+    for (let i = 0; i < history.length - 1; i++) {
+      totalConsumed += history[i].qty;
+    }
+
+    // Tasa de consumo diario (Burn Rate)
+    const dailyBurn = totalConsumed / totalDays;
+    
+    // Stock actual estimado = (Última cantidad comprada) - (Gasto desde esa fecha hasta hoy)
+    const lastQty = history[history.length - 1].qty;
+    const daysSinceLastBuy = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
+    let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
+    
+    if (estStock < 0) estStock = 0;
+
+    // Días restantes hasta llegar a cero
+    const daysLeft = estStock / dailyBurn;
+
+    // Lógica del semáforo
+    let badge = 'status-green';
+    let statusText = 'En Stock';
+
+    if (daysLeft <= 7 || estStock === 0) {
+      badge = 'status-red';
+      statusText = 'Urgente (Comprar)';
+    } else if (daysLeft <= 25) {
+      badge = 'status-yellow';
+      statusText = 'Próximo a Agotarse';
+    }
+
+    return { 
+      dailyBurn: dailyBurn.toFixed(2), 
+      estStock: Math.floor(estStock), 
+      daysLeft: Math.floor(daysLeft), 
+      badge: badge, 
+      statusText: statusText 
+    };
+  }
+
+  function renderInventory() {
+    const tbody = document.getElementById('inventoryTableBody');
+    tbody.innerHTML = '';
+    
+    const keys = Object.keys(inventory);
+    if (keys.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">El radar está vacío. Escanea tu primera factura.</td></tr>';
+      return;
+    }
+
+    // Convertir a array para renderizar
+    const itemsList = keys.map(k => inventory[k]);
+    
+    itemsList.forEach(item => {
+      const stats = calculatePredictiveStatus(item);
+      const buyCount = item.history.length;
+      
+      const row = `<tr>
+        <td style="font-weight: 600; color: #fff;">${item.sku}</td>
+        <td>${buyCount} facturas</td>
+        <td style="color: #94a3b8;">${stats.dailyBurn > 0 ? stats.dailyBurn + ' unid/día' : '-'}</td>
+        <td style="font-weight: bold; font-size: 1.05rem;">${stats.estStock}</td>
+        <td>
+          <div class="status-badge ${stats.badge}">
+            <span class="pulse-dot"></span> ${stats.statusText}
+          </div>
+        </td>
+      </tr>`;
+      tbody.innerHTML += row;
+    });
+  }
+
+  function clearInventory() {
+    if(confirm("ATENCIÓN: ¿Estás seguro de borrar toda la base de datos predictiva de insumos?")) {
+      localStorage.removeItem('loomtech_inventory');
+      inventory = {};
+      renderInventory();
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
