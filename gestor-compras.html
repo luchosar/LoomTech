@@ -17,7 +17,7 @@
     }
 
     body { background: var(--bg-body); display: flex; flex-direction: column; }
-    h2, h3 { color: #f8fafc; }
+    h2, h3 { color: #f8fafc; margin: 0; }
     label { color: #cbd5e1; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px; }
     
     .main-header {
@@ -51,6 +51,7 @@
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     
     .select-dark { background: #0f172a; color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; }
+    .search-input { width: 220px; }
     input[type="date"] { background: #0f172a; color: white; color-scheme: dark; margin-bottom: 16px;}
     
     .btn-edit-alias { background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.5; transition: 0.2s; margin-left: 8px; }
@@ -67,6 +68,9 @@
     .status-yellow .pulse-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
     .status-red .pulse-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
     .status-gray .pulse-dot { background: #94a3b8; }
+
+    /* Alineación superior tabla de inventario */
+    .controls-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
 
     @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } }
   </style>
@@ -89,12 +93,12 @@
   <div class="dashboard-layout">
     
     <div class="import-panel">
-      <h2>Importar Archivo de Compra</h2>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+      <h2>Importar Compra</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; margin-top:8px;">
         Sube el archivo CSV de ProwireUSA o Mouser.
       </p>
 
-      <label>Fecha (Opcional - Se auto detecta del CSV)</label>
+      <label>Fecha (Se auto detecta del CSV)</label>
       <input type="date" id="invoiceDate">
 
       <label>Cargar Archivo CSV</label>
@@ -112,11 +116,14 @@
     </div>
 
     <div class="table-panel">
-      <div class="flex-between">
-        <h2>Radar de Inventario</h2>
+      
+      <div class="controls-top">
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <h2>Radar de Inventario</h2>
+          <input type="text" id="searchInput" class="select-dark search-input" placeholder="🔍 Buscar SKU o Alias..." oninput="renderInventory()">
+        </div>
         
         <div style="display: flex; gap: 10px; align-items: center;">
-          <label style="margin: 0;">Frecuencia:</label>
           <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()">
             <option value="1">Diario</option>
             <option value="30" selected>Mensual</option>
@@ -125,12 +132,10 @@
             <option value="365">Anual</option>
           </select>
           
-          <!-- Botones de Backup -->
-          <button class="btn-secondary btn-sm" onclick="exportData()" title="Descargar Backup de Inventario">⬇️</button>
+          <button class="btn-secondary btn-sm" onclick="exportData()" title="Descargar Backup">⬇️</button>
           <input type="file" id="importBackupFile" style="display:none" accept=".json" onchange="importData(event)">
-          <button class="btn-secondary btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Subir Backup de Inventario">⬆️</button>
-          
-          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()">Borrar Base</button>
+          <button class="btn-secondary btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Subir Backup">⬆️</button>
+          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()" title="Borrar toda la base">🗑️</button>
         </div>
       </div>
 
@@ -139,8 +144,8 @@
           <tr>
             <th>SKU / Alias</th>
             <th>Historial</th>
-            <th>Consumo Estimado</th>
-            <th>Stock Proyecto</th>
+            <th>Consumo</th>
+            <th>Stock Est.</th>
             <th>Estado Actual</th>
           </tr>
         </thead>
@@ -185,12 +190,11 @@
   }
 
   function processExtractedText(text) {
-    // 1. SANITIZACIÓN: Eliminar absolutamente todas las comillas (simples y dobles) del texto
+    // 1. SANITIZACIÓN: Eliminar comillas dobles y simples
     const cleanText = text.replace(/["']/g, '');
-
     let dateStr = document.getElementById('invoiceDate').value;
     
-    // 2. BUSCAR FECHA EN TEXTO LIMPIO
+    // 2. BUSCAR FECHA 
     const dateRegex = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
     const dateMatch = dateRegex.exec(cleanText);
     if (dateMatch) {
@@ -203,7 +207,7 @@
       return; 
     }
 
-    // 3. EXTRACCIÓN (Ahora funciona perfecto porque las comillas iniciales ya no existen)
+    // 3. EXTRACCIÓN 
     const regex = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
     let match;
     let itemsFound = 0;
@@ -217,7 +221,7 @@
 
     if (itemsFound > 0) {
       const res = document.getElementById('importResult');
-      res.innerText = `¡Éxito! Fecha detectada: ${dateStr}. Se sumaron ${itemsFound} componentes.`;
+      res.innerText = `¡Éxito! Fecha: ${dateStr}. Se sumaron ${itemsFound} componentes.`;
       res.style.color = '#34d399';
       res.style.display = 'block';
       
@@ -261,6 +265,7 @@
     const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     if (history.length < 2) {
+      // 999 días restantes fuerza a que queden últimos en el orden de urgencia
       return { dailyBurn: 0, estStock: 'N/A', daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
     }
 
@@ -288,13 +293,13 @@
 
     if (daysLeft <= 7 || estStock === 0) {
       badge = 'status-red';
-      statusText = 'Urgente (Comprar)';
+      statusText = 'Urgente';
     } else if (daysLeft <= 25) {
       badge = 'status-yellow';
       statusText = 'Alerta Stock';
     }
 
-    return { dailyBurn: dailyBurn, estStock: Math.floor(estStock), badge: badge, statusText: statusText };
+    return { dailyBurn: dailyBurn, estStock: Math.floor(estStock), daysLeft: daysLeft, badge: badge, statusText: statusText };
   }
 
   function renderInventory() {
@@ -307,15 +312,37 @@
       return;
     }
 
+    // Termino de búsqueda
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Configuración de frecuencia
     const frameSelect = document.getElementById('timeFrameSelect');
     const frameDays = parseInt(frameSelect.value);
-    const frameLabels = { 1: 'día', 30: 'mes', 60: 'bimestre', 180: 'semestre', 365: 'año' };
-    const timeLabel = frameLabels[frameDays];
 
-    const itemsList = keys.map(k => inventory[k]);
+    // 1. Filtrar los items en base al buscador
+    let filteredItems = keys.map(k => inventory[k]).filter(item => {
+      const matchSku = item.sku.toLowerCase().includes(searchTerm);
+      const matchAlias = (item.alias || "").toLowerCase().includes(searchTerm);
+      return matchSku || matchAlias;
+    });
+
+    if (filteredItems.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">No se encontraron componentes con esa búsqueda.</td></tr>';
+      return;
+    }
+
+    // 2. Calcular los estados y ordenar por urgencia (días restantes)
+    let itemsWithStats = filteredItems.map(item => {
+      return { item: item, stats: calculatePredictiveStatus(item) };
+    });
     
-    itemsList.forEach(item => {
-      const stats = calculatePredictiveStatus(item);
+    // Ordenar de menor a mayor (Urgente 0 -> Alerta 20 -> Sano 100 -> Aprendiendo 999)
+    itemsWithStats.sort((a, b) => a.stats.daysLeft - b.stats.daysLeft);
+
+    // 3. Renderizar la tabla ya ordenada
+    itemsWithStats.forEach(data => {
+      const item = data.item;
+      const stats = data.stats;
       const buyCount = item.history.length;
       
       const displayName = item.alias 
@@ -323,7 +350,7 @@
         : `<strong style="color: #fff;">${item.sku}</strong>`;
 
       const displayBurn = stats.dailyBurn > 0 
-        ? `${(stats.dailyBurn * frameDays).toFixed(1)} unid / ${timeLabel}`
+        ? `${(stats.dailyBurn * frameDays).toFixed(1)} U`
         : '-';
       
       const row = `<tr>
@@ -333,7 +360,7 @@
             <button class="btn-edit-alias" onclick="editAlias('${item.sku}')" title="Asignar Alias">✏️</button>
           </div>
         </td>
-        <td style="color: #94a3b8;">${buyCount} facturas</td>
+        <td style="color: #94a3b8;">${buyCount} fact.</td>
         <td style="color: #94a3b8; font-family: monospace; font-size: 0.95rem;">${displayBurn}</td>
         <td style="font-weight: bold; font-size: 1.1rem; color: #fff;">${stats.estStock}</td>
         <td>
