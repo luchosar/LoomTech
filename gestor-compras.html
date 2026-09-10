@@ -114,6 +114,7 @@
 
   <div class="dashboard-layout">
     
+    <!-- PANEL IZQUIERDO: Importador y Archivos -->
     <div>
       <div class="import-panel">
         <h2>Importar Compra</h2>
@@ -137,12 +138,14 @@
         <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
       </div>
 
+      <!-- Historial de Cargas -->
       <div class="import-panel" style="margin-top: 24px; padding-top: 16px;">
         <h3 style="font-size: 1.05rem;">Historial de Archivos Cargados</h3>
         <ul id="loadedInvoicesList" class="invoice-list"></ul>
       </div>
     </div>
 
+    <!-- PANEL DERECHO: Tabla de Inventario -->
     <div class="table-panel">
       
       <div class="controls-top">
@@ -411,7 +414,6 @@
       const buyCount = item.history.length;
       const displayName = item.alias ? `<strong style="color: #fff; font-size:1.05rem;">${item.alias}</strong><br><span style="color: #64748b; font-size:0.8rem;">${item.sku}</span>` : `<strong style="color: #fff;">${item.sku}</strong>`;
       
-      // Muestra "0.8 U"
       const displayBurn = stats.dailyBurn > 0 ? `${(stats.dailyBurn * frameDays).toFixed(1)} U` : '-';
       
       const row = document.createElement('tr');
@@ -454,7 +456,6 @@
     activeChartSku = null;
   }
 
-  // Formateador dd/mm/aa
   function formatDDMMAA(dateObj) {
     const d = String(dateObj.getDate()).padStart(2, '0');
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -473,7 +474,6 @@
     let currentStock = 0;
     const dailyBurn = stats.dailyBurn;
     
-    // Configurar fechas correctamente usando T12 para evitar que el timezone corra el día
     const today = new Date();
     const cutoffDate = new Date();
     cutoffDate.setDate(today.getDate() - daysLimit);
@@ -481,44 +481,47 @@
     if (history.length > 0) {
       currentStock = history[0].qty;
       const firstDate = new Date(history[0].date + "T12:00:00");
-      chartData.push({ dateObj: firstDate, label: formatDDMMAA(firstDate), y: currentStock });
+      chartData.push({ x: firstDate.getTime(), y: currentStock });
 
       for (let i = 1; i < history.length; i++) {
         const buyDate = new Date(history[i].date + "T12:00:00");
         const prevDate = new Date(history[i-1].date + "T12:00:00");
         const daysDiff = (buyDate - prevDate) / (1000 * 60 * 60 * 24);
 
-        // 1. Dibuja la bajada constante hasta justo antes de comprar
+        // Caída constante (Misma coordenada temporal X para dibujar línea vertical de salto)
         let dropStock = currentStock - (dailyBurn * daysDiff);
         if (dropStock < 0) dropStock = 0;
-        chartData.push({ dateObj: buyDate, label: formatDDMMAA(buyDate), y: dropStock });
+        chartData.push({ x: buyDate.getTime(), y: dropStock });
 
-        // 2. Dibuja el salto vertical recto sumando el nuevo lote
+        // Salto vertical
         currentStock = dropStock + history[i].qty;
-        // Se le agrega un espacio a la etiqueta para que Chart.js dibuje el punto vertical el mismo día
-        chartData.push({ dateObj: buyDate, label: formatDDMMAA(buyDate) + " ", y: currentStock });
+        chartData.push({ x: buyDate.getTime(), y: currentStock });
       }
 
-      // Proyectar caída desde la última compra hasta el día de HOY
+      // Proyectar caída hacia el día de Hoy
       const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
       const daysToToday = (today - lastDate) / (1000 * 60 * 60 * 24);
       if (daysToToday > 0) {
         let todayStock = currentStock - (dailyBurn * daysToToday);
         if (todayStock < 0) todayStock = 0;
-        chartData.push({ dateObj: today, label: formatDDMMAA(today) + " (Hoy)", y: todayStock });
+        chartData.push({ x: today.getTime(), y: todayStock });
       }
     }
 
-    const filteredData = chartData.filter(pt => pt.dateObj >= cutoffDate);
-    // Asegurar que al menos el último punto se vea si el filtro es muy corto
-    if (filteredData.length === 0 && chartData.length > 0) filteredData.push(chartData[chartData.length - 1]);
+    const filteredData = chartData.filter(pt => pt.x >= cutoffDate.getTime());
+    if (filteredData.length === 0 && chartData.length > 0) {
+        filteredData.push(chartData[chartData.length - 1]);
+    }
 
-    const labels = filteredData.map(pt => pt.label);
-    const dataPoints = filteredData.map(pt => pt.y);
-
-    // Array para la línea horizontal de alerta (25 días de consumo)
+    // Línea amarilla de Alerta
     const warningThreshold = dailyBurn * 25;
-    const thresholdLine = new Array(labels.length).fill(warningThreshold);
+    let thresholdData = [];
+    if(filteredData.length > 0) {
+        thresholdData = [
+            { x: filteredData[0].x, y: warningThreshold },
+            { x: filteredData[filteredData.length - 1].x, y: warningThreshold }
+        ];
+    }
 
     if(currentChart) { currentChart.destroy(); }
     const ctx = document.getElementById('stockChart').getContext('2d');
@@ -529,11 +532,10 @@
     currentChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
         datasets: [
           {
             label: 'Stock Estimado',
-            data: dataPoints,
+            data: filteredData,
             borderColor: '#3b5bfd',
             backgroundColor: 'rgba(59, 91, 253, 0.2)',
             borderWidth: 3,
@@ -541,15 +543,15 @@
             pointBorderColor: '#3b5bfd',
             pointRadius: 4,
             fill: true,
-            tension: 0 // Interpolación en línea recta (Diente de sierra puro)
+            tension: 0 // Dibujo geométrico sin curvas irreales
           },
           {
-            label: 'Alerta Re-Stock',
-            data: thresholdLine,
+            label: 'Alerta Re-Stock (25 días)',
+            data: thresholdData,
             borderColor: 'rgba(245, 158, 11, 0.8)',
             borderWidth: 2,
             borderDash: [5, 5], // Línea punteada
-            pointRadius: 0, // Ocultar los puntos
+            pointRadius: 0,
             fill: false,
             tension: 0
           }
@@ -559,11 +561,28 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, labels: { color: '#94a3b8' } }
+          legend: { display: true, labels: { color: '#94a3b8' } },
+          tooltip: {
+            callbacks: {
+              title: function(context) {
+                return formatDDMMAA(new Date(context[0].parsed.x));
+              }
+            }
+          }
         },
         scales: {
           y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-          x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }
+          x: { 
+            type: 'linear',
+            grid: { display: false }, 
+            ticks: { 
+              maxRotation: 45, 
+              minRotation: 45,
+              callback: function(value) {
+                return formatDDMMAA(new Date(value));
+              }
+            } 
+          }
         }
       }
     });
