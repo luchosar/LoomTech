@@ -6,7 +6,6 @@
   <title>Gestor Predictivo de Insumos - LoomTech</title>
   
   <link rel="stylesheet" href="general.css">
-  <!-- Importamos Chart.js para los gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -43,7 +42,6 @@
     .file-msg { font-size: 0.85rem; margin-top: 8px; font-weight: 600; }
     .file-input { position: absolute; left: 0; top: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
 
-    /* Lista de Historial de Invoices */
     .invoice-list { list-style: none; padding: 0; margin: 16px 0 0 0; max-height: 200px; overflow-y: auto; }
     .invoice-item { 
       display: flex; justify-content: space-between; align-items: center; 
@@ -56,7 +54,6 @@
     .table-dark { width: 100%; border-collapse: collapse; margin-top: 16px; color: var(--text-main); }
     .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-    /* Hover en la fila para abrir modal */
     .table-row-clickable { cursor: pointer; transition: background 0.2s; }
     .table-row-clickable:hover { background: #18223d; }
     
@@ -88,7 +85,7 @@
     }
     .modal-content {
       background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 12px; padding: 24px; width: 90%; max-width: 800px;
+      border-radius: 12px; padding: 24px; width: 90%; max-width: 850px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
     .btn-close-modal {
@@ -96,7 +93,7 @@
       cursor: pointer; transition: 0.2s;
     }
     .btn-close-modal:hover { color: #ef4444; }
-    .chart-container { position: relative; height: 400px; width: 100%; margin-top: 16px; }
+    .chart-container { position: relative; height: 420px; width: 100%; margin-top: 16px; }
 
     @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } }
   </style>
@@ -117,7 +114,6 @@
 
   <div class="dashboard-layout">
     
-    <!-- PANEL IZQUIERDO: Importador y Archivos -->
     <div>
       <div class="import-panel">
         <h2>Importar Compra</h2>
@@ -141,16 +137,12 @@
         <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
       </div>
 
-      <!-- Historial de Cargas -->
       <div class="import-panel" style="margin-top: 24px; padding-top: 16px;">
         <h3 style="font-size: 1.05rem;">Historial de Archivos Cargados</h3>
-        <ul id="loadedInvoicesList" class="invoice-list">
-          <!-- JS llena esto -->
-        </ul>
+        <ul id="loadedInvoicesList" class="invoice-list"></ul>
       </div>
     </div>
 
-    <!-- PANEL DERECHO: Tabla de Inventario -->
     <div class="table-panel">
       
       <div class="controls-top">
@@ -185,9 +177,7 @@
             <th>Estado Actual</th>
           </tr>
         </thead>
-        <tbody id="inventoryTableBody">
-          <!-- JS llena esto -->
-        </tbody>
+        <tbody id="inventoryTableBody"></tbody>
       </table>
       <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; text-align: right;">
         * Haz clic en cualquier fila para ver la proyección gráfica.
@@ -221,7 +211,6 @@
 </div>
 
 <script>
-  // VARIABLES GLOBALES
   let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
   let loadedInvoices = JSON.parse(localStorage.getItem('loomtech_invoices')) || [];
   let currentChart = null;
@@ -244,14 +233,12 @@
     }
   }
 
-  // --- LECTOR Y PROCESAMIENTO DE ARCHIVOS ---
   function processInvoiceFile() {
     const fileInput = document.getElementById('invoiceFile');
     if (fileInput.files.length === 0) { alert("Por favor, selecciona un archivo CSV primero."); return; }
 
     const file = fileInput.files[0];
     
-    // PREVENCIÓN DE DUPLICADOS
     const isDuplicate = loadedInvoices.some(inv => inv.name === file.name);
     if (isDuplicate) {
       if(!confirm(`El archivo "${file.name}" ya está en el historial.\n¿Estás seguro de que quieres cargarlo de nuevo y duplicar el stock?`)) {
@@ -260,9 +247,7 @@
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-      processExtractedText(e.target.result, file.name);
-    };
+    reader.onload = function(e) { processExtractedText(e.target.result, file.name); };
     reader.readAsText(file);
   }
 
@@ -279,9 +264,7 @@
 
     if (!dateStr) { alert("No se pudo detectar la fecha. Selecciónala manualmente."); return; }
 
-    // Generar un ID único para este documento
     const invoiceId = 'INV-' + Date.now();
-    
     const regex = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
     let match;
     let itemsFound = 0;
@@ -294,7 +277,6 @@
     }
 
     if (itemsFound > 0) {
-      // Guardar registro de la factura
       loadedInvoices.push({ id: invoiceId, name: fileName, date: dateStr, count: itemsFound });
       saveData();
       
@@ -318,7 +300,6 @@
     inventory[sku].history.push({ date: dateStr, qty: qty, invId: invoiceId });
   }
 
-  // --- GESTIÓN DE HISTORIAL DE FACTURAS ---
   function renderInvoicesList() {
     const list = document.getElementById('loadedInvoicesList');
     list.innerHTML = '';
@@ -327,7 +308,6 @@
       return;
     }
     
-    // Invertir para ver el más reciente arriba
     [...loadedInvoices].reverse().forEach(inv => {
       const li = document.createElement('li');
       li.className = 'invoice-item';
@@ -345,17 +325,11 @@
   function deleteInvoice(id) {
     if(!confirm("¿Borrar este archivo? Se descontarán todos los componentes que se sumaron con él.")) return;
     
-    // Filtrar de la lista de facturas
     loadedInvoices = loadedInvoices.filter(i => i.id !== id);
-    
-    // Eliminar las compras de todos los inventarios
     const keys = Object.keys(inventory);
     keys.forEach(sku => {
       inventory[sku].history = inventory[sku].history.filter(h => h.invId !== id);
-      // Si el producto se quedó sin compras, lo borramos de la base
-      if(inventory[sku].history.length === 0) {
-        delete inventory[sku];
-      }
+      if(inventory[sku].history.length === 0) { delete inventory[sku]; }
     });
 
     saveData();
@@ -363,21 +337,18 @@
     renderInvoicesList();
   }
 
-  // --- MOTOR PREDICTIVO Y TABLA ---
   function editAlias(event, sku) {
-    event.stopPropagation(); // Evita que se abra el modal al hacer click en el lápiz
+    event.stopPropagation();
     const currentAlias = inventory[sku].alias || "";
     const newAlias = prompt(`Escribe un nombre fácil de recordar para:\n${sku}`, currentAlias);
     if (newAlias !== null) {
       inventory[sku].alias = newAlias.trim();
-      saveData();
-      renderInventory();
+      saveData(); renderInventory();
     }
   }
 
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
     if (history.length < 2) {
       let qty = history.length === 1 ? history[0].qty : 0;
       return { dailyBurn: 0, estStock: qty, daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
@@ -390,9 +361,7 @@
     if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
 
     let totalConsumed = 0;
-    for (let i = 0; i < history.length - 1; i++) {
-      totalConsumed += history[i].qty;
-    }
+    for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
 
     const dailyBurn = totalConsumed / totalDays;
     const lastQty = history[history.length - 1].qty;
@@ -441,6 +410,8 @@
       const { item, stats } = data;
       const buyCount = item.history.length;
       const displayName = item.alias ? `<strong style="color: #fff; font-size:1.05rem;">${item.alias}</strong><br><span style="color: #64748b; font-size:0.8rem;">${item.sku}</span>` : `<strong style="color: #fff;">${item.sku}</strong>`;
+      
+      // Muestra "0.8 U"
       const displayBurn = stats.dailyBurn > 0 ? `${(stats.dailyBurn * frameDays).toFixed(1)} U` : '-';
       
       const row = document.createElement('tr');
@@ -475,13 +446,20 @@
     document.getElementById('modalAliasSubtitle').innerText = item.alias ? sku : '';
     document.getElementById('chartModal').style.display = 'flex';
     
-    // Por defecto renderiza histórico completo (9999 días)
     renderChart(9999);
   }
 
   function closeModal() {
     document.getElementById('chartModal').style.display = 'none';
     activeChartSku = null;
+  }
+
+  // Formateador dd/mm/aa
+  function formatDDMMAA(dateObj) {
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const y = String(dateObj.getFullYear()).slice(-2);
+    return `${d}/${m}/${y}`;
   }
 
   function renderChart(daysLimit) {
@@ -491,53 +469,60 @@
     const stats = calculatePredictiveStatus(item);
     const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Preparamos los datos matemáticos para el "diente de sierra"
     let chartData = [];
     let currentStock = 0;
+    const dailyBurn = stats.dailyBurn;
+    
+    // Configurar fechas correctamente usando T12 para evitar que el timezone corra el día
     const today = new Date();
     const cutoffDate = new Date();
     cutoffDate.setDate(today.getDate() - daysLimit);
 
-    history.forEach((buy, index) => {
-      const buyDate = new Date(buy.date);
-      
-      // Calculamos la bajada de stock justo antes de esta compra
-      if(index > 0) {
-        const prevDate = new Date(history[index-1].date);
-        const daysDiff = (buyDate - prevDate) / (1000 * 60 * 60 * 24);
-        const dropStock = Math.max(0, currentStock - (stats.dailyBurn * daysDiff));
-        
-        // Punto bajo (el día anterior a la compra)
-        const dayBefore = new Date(buyDate);
-        dayBefore.setDate(dayBefore.getDate() - 1);
-        chartData.push({ x: dayBefore, y: dropStock });
-        
-        currentStock = dropStock;
-      }
-      
-      // Punto alto (La nueva compra se suma)
-      currentStock += buy.qty;
-      chartData.push({ x: buyDate, y: currentStock });
-    });
+    if (history.length > 0) {
+      currentStock = history[0].qty;
+      const firstDate = new Date(history[0].date + "T12:00:00");
+      chartData.push({ dateObj: firstDate, label: formatDDMMAA(firstDate), y: currentStock });
 
-    // Agregar el punto final de HOY
-    if(history.length > 1) {
-      chartData.push({ x: today, y: stats.estStock });
+      for (let i = 1; i < history.length; i++) {
+        const buyDate = new Date(history[i].date + "T12:00:00");
+        const prevDate = new Date(history[i-1].date + "T12:00:00");
+        const daysDiff = (buyDate - prevDate) / (1000 * 60 * 60 * 24);
+
+        // 1. Dibuja la bajada constante hasta justo antes de comprar
+        let dropStock = currentStock - (dailyBurn * daysDiff);
+        if (dropStock < 0) dropStock = 0;
+        chartData.push({ dateObj: buyDate, label: formatDDMMAA(buyDate), y: dropStock });
+
+        // 2. Dibuja el salto vertical recto sumando el nuevo lote
+        currentStock = dropStock + history[i].qty;
+        // Se le agrega un espacio a la etiqueta para que Chart.js dibuje el punto vertical el mismo día
+        chartData.push({ dateObj: buyDate, label: formatDDMMAA(buyDate) + " ", y: currentStock });
+      }
+
+      // Proyectar caída desde la última compra hasta el día de HOY
+      const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
+      const daysToToday = (today - lastDate) / (1000 * 60 * 60 * 24);
+      if (daysToToday > 0) {
+        let todayStock = currentStock - (dailyBurn * daysToToday);
+        if (todayStock < 0) todayStock = 0;
+        chartData.push({ dateObj: today, label: formatDDMMAA(today) + " (Hoy)", y: todayStock });
+      }
     }
 
-    // Filtrar puntos según el límite de tiempo seleccionado (ej. último mes)
-    chartData = chartData.filter(pt => pt.x >= cutoffDate);
-    
-    // Formatear para Chart.js
-    const labels = chartData.map(pt => pt.x.toISOString().split('T')[0]);
-    const dataPoints = chartData.map(pt => pt.y);
+    const filteredData = chartData.filter(pt => pt.dateObj >= cutoffDate);
+    // Asegurar que al menos el último punto se vea si el filtro es muy corto
+    if (filteredData.length === 0 && chartData.length > 0) filteredData.push(chartData[chartData.length - 1]);
 
-    // Destruir el gráfico anterior si existe
+    const labels = filteredData.map(pt => pt.label);
+    const dataPoints = filteredData.map(pt => pt.y);
+
+    // Array para la línea horizontal de alerta (25 días de consumo)
+    const warningThreshold = dailyBurn * 25;
+    const thresholdLine = new Array(labels.length).fill(warningThreshold);
+
     if(currentChart) { currentChart.destroy(); }
-
     const ctx = document.getElementById('stockChart').getContext('2d');
     
-    // Configuración de colores oscuros corporativos
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = 'system-ui';
 
@@ -545,39 +530,45 @@
       type: 'line',
       data: {
         labels: labels,
-        datasets: [{
-          label: 'Stock Estimado',
-          data: dataPoints,
-          borderColor: '#3b5bfd',
-          backgroundColor: 'rgba(59, 91, 253, 0.2)',
-          borderWidth: 3,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#3b5bfd',
-          pointRadius: 4,
-          fill: true,
-          tension: 0 // Líneas rectas para ver caídas y saltos secos
-        }]
+        datasets: [
+          {
+            label: 'Stock Estimado',
+            data: dataPoints,
+            borderColor: '#3b5bfd',
+            backgroundColor: 'rgba(59, 91, 253, 0.2)',
+            borderWidth: 3,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#3b5bfd',
+            pointRadius: 4,
+            fill: true,
+            tension: 0 // Interpolación en línea recta (Diente de sierra puro)
+          },
+          {
+            label: 'Alerta Re-Stock',
+            data: thresholdLine,
+            borderColor: 'rgba(245, 158, 11, 0.8)',
+            borderWidth: 2,
+            borderDash: [5, 5], // Línea punteada
+            pointRadius: 0, // Ocultar los puntos
+            fill: false,
+            tension: 0
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false }
+          legend: { display: true, labels: { color: '#94a3b8' } }
         },
         scales: {
-          y: { 
-            beginAtZero: true, 
-            grid: { color: 'rgba(255,255,255,0.05)' } 
-          },
-          x: { 
-            grid: { display: false } 
-          }
+          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+          x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }
         }
       }
     });
   }
 
-  // --- PERSISTENCIA Y RESPALDO ---
   function saveData() {
     localStorage.setItem('loomtech_inventory', JSON.stringify(inventory));
     localStorage.setItem('loomtech_invoices', JSON.stringify(loadedInvoices));
