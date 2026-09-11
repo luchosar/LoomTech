@@ -58,7 +58,6 @@
     .table-row-clickable { cursor: pointer; transition: background 0.2s; }
     .table-row-clickable:hover { background: #18223d; }
     
-    /* Cabeceras de tabla ordenables */
     .sortable { cursor: pointer; transition: color 0.2s; user-select: none; }
     .sortable:hover { color: #fff; }
     .sort-icon { font-size: 0.75rem; margin-left: 4px; color: var(--primary); }
@@ -223,8 +222,7 @@
   let currentChart = null;
   let activeChartSku = null;
 
-  // Variables de ordenamiento
-  let currentSortColumn = 'urgency'; // Por defecto ordena por urgencia
+  let currentSortColumn = 'urgency';
   let currentSortDirection = 'asc';
 
   function init() { 
@@ -247,7 +245,6 @@
     }
   }
 
-  // --- LECTORES (PDF Y TEXTO PLANO) ---
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -443,46 +440,88 @@
     }
   }
 
-  // --- MOTOR PREDICTIVO UNIFICADO ---
+  // --- MOTOR PREDICTIVO CON STOCK PROMEDIO HISTÓRICO ---
   function calculatePredictiveStatus(item) {
-    // Ordenar con "T12:00:00" para coincidir matemáticamente con el gráfico
     const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
     
     if (history.length < 2) {
       let qty = history.length === 1 ? history[0].qty : 0;
-      // Prioridad 4 = Aprendiendo
-      return { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4 };
+      // Priority 4 = Aprendiendo (Siempre va al final)
+      return { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
     }
 
     const firstDate = new Date(history[0].date + "T12:00:00");
     const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
-    const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
+    
+    const today = new Date();
+    today.setHours(12, 0, 0, 0); // Sincronizado a mediodía para igualar el gráfico
 
-    if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4 };
+    const totalDays = (lastDate - firstDate) / 86400000;
+    if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
 
     let totalConsumed = 0;
     for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
-
     const dailyBurn = totalConsumed / totalDays;
-    const lastQty = history[history.length - 1].qty;
-    const today = new Date();
+
+    // Cálculo matemático del "Promedio de Stock Histórico" (Área de la curva / Días Totales)
+    let currentS = history[0].qty;
+    let area = 0;
     
-    const daysSinceLastBuy = (today - lastDate) / (1000 * 60 * 60 * 24);
-    let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
-    if (estStock < 0) estStock = 0;
+    for (let i = 1; i < history.length; i++) {
+      const d1 = new Date(history[i-1].date + "T12:00:00");
+      const d2 = new Date(history[i].date + "T12:00:00");
+      const days = (d2 - d1) / 86400000;
+      
+      let dropS = currentS - (dailyBurn * days);
+      if (dropS < 0) dropS = 0;
+      
+      // Suma del área de cada diente de sierra
+      area += ((currentS + dropS) / 2) * days;
+      currentS = dropS + history[i].qty;
+    }
     
-    // REDONDEO HACIA ARRIBA para la interfaz y lógica final
+    const daysToToday = (today - lastDate) / 86400000;
+    let estStock = currentS;
+    
+    if (daysToToday > 0) {
+      let todayS = currentS - (dailyBurn * daysToToday);
+      if (todayS < 0) todayS = 0;
+      area += ((currentS + todayS) / 2) * daysToToday;
+      estStock = todayS;
+    } else if (daysToToday < 0) {
+      estStock = currentS; // Prevención en caso de fechas futuras anómalas
+    }
+
+    const totalDaysToToday = (today - firstDate) / 86400000;
+    const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : history[0].qty;
+    
+    // Aplicamos Ceil (Redondeo hacia arriba) como pediste
     const roundedStock = Math.ceil(estStock);
-    const daysLeft = dailyBurn > 0 ? (estStock / dailyBurn) : Infinity;
+    const alertThreshold = Math.ceil(historicalAvgStock);
+    const urgentThreshold = Math.ceil(historicalAvgStock * 0.6);
 
-    let badge = 'status-green'; let statusText = 'En Stock'; let priority = 3;
-    if (daysLeft <= 7 || roundedStock === 0) { badge = 'status-red'; statusText = 'Urgente'; priority = 1;} 
-    else if (daysLeft <= 25) { badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;}
+    let badge = 'status-green'; 
+    let statusText = 'En Stock'; 
+    let priority = 3;
 
-    return { dailyBurn: dailyBurn, estStock: roundedStock, daysLeft: daysLeft, badge: badge, statusText: statusText, priority: priority };
+    if (roundedStock <= urgentThreshold) { 
+      badge = 'status-red'; statusText = 'Urgente'; priority = 1;
+    } else if (roundedStock <= alertThreshold) { 
+      badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
+    }
+
+    return { 
+      dailyBurn: dailyBurn, 
+      estStock: roundedStock, 
+      daysLeft: dailyBurn > 0 ? (estStock / dailyBurn) : Infinity, 
+      badge: badge, 
+      statusText: statusText, 
+      priority: priority,
+      alertThreshold: alertThreshold,
+      urgentThreshold: urgentThreshold
+    };
   }
 
-  // --- LÓGICA DE ORDENAMIENTO DE COLUMNAS ---
   function setSort(column) {
     if (currentSortColumn === column) {
       currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
@@ -497,7 +536,6 @@
     const tbody = document.getElementById('inventoryTableBody');
     tbody.innerHTML = '';
     
-    // Resetear flechas en cabecera
     document.querySelectorAll('.sort-icon').forEach(el => el.innerText = '');
     const icon = currentSortDirection === 'asc' ? '▲' : '▼';
     if(document.getElementById('sort-' + currentSortColumn)) {
@@ -527,7 +565,7 @@
 
     let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
     
-    // APLICAR ORDENAMIENTO
+    // Motor de Ordenamiento interactivo
     itemsWithStats.sort((a, b) => {
       let valA, valB;
       switch(currentSortColumn) {
@@ -549,12 +587,10 @@
           break;
         case 'urgency':
         default:
-          // Orden primario por nivel de prioridad (1 = urg, 4 = apr)
           if (a.stats.priority !== b.stats.priority) {
             valA = a.stats.priority;
             valB = b.stats.priority;
           } else {
-            // Orden secundario por dias restantes
             valA = a.stats.daysLeft;
             valB = b.stats.daysLeft;
           }
@@ -631,7 +667,9 @@
     const dailyBurn = stats.dailyBurn;
     
     const today = new Date();
-    const cutoffDate = new Date();
+    today.setHours(12, 0, 0, 0);
+    
+    const cutoffDate = new Date(today);
     cutoffDate.setDate(today.getDate() - daysLimit);
 
     if (history.length > 0) {
@@ -642,7 +680,7 @@
       for (let i = 1; i < history.length; i++) {
         const buyDate = new Date(history[i].date + "T12:00:00");
         const prevDate = new Date(history[i-1].date + "T12:00:00");
-        const daysDiff = (buyDate - prevDate) / (1000 * 60 * 60 * 24);
+        const daysDiff = (buyDate - prevDate) / 86400000;
 
         let dropStock = currentStock - (dailyBurn * daysDiff);
         if (dropStock < 0) dropStock = 0;
@@ -653,7 +691,7 @@
       }
 
       const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
-      const daysToToday = (today - lastDate) / (1000 * 60 * 60 * 24);
+      const daysToToday = (today - lastDate) / 86400000;
       if (daysToToday > 0) {
         let todayStock = currentStock - (dailyBurn * daysToToday);
         if (todayStock < 0) todayStock = 0;
@@ -664,9 +702,10 @@
     const filteredData = chartData.filter(pt => pt.x >= cutoffDate.getTime());
     if (filteredData.length === 0 && chartData.length > 0) { filteredData.push(chartData[chartData.length - 1]); }
 
-    const warningThreshold = Math.ceil(dailyBurn * 25);
+    // Dibuja la línea horizontal Amarilla basándose en el Promedio Histórico
+    const warningThreshold = stats.alertThreshold || 0;
     let thresholdData = [];
-    if(filteredData.length > 0) {
+    if(filteredData.length > 0 && warningThreshold > 0) {
         thresholdData = [
             { x: filteredData[0].x, y: warningThreshold },
             { x: filteredData[filteredData.length - 1].x, y: warningThreshold }
@@ -696,7 +735,7 @@
             tension: 0 
           },
           {
-            label: 'Alerta Re-Stock (25 días)',
+            label: `Alerta Re-Stock (Prom. Histórico: ${warningThreshold} U)`,
             data: thresholdData,
             borderColor: 'rgba(245, 158, 11, 0.8)',
             borderWidth: 2,
