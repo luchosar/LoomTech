@@ -6,8 +6,6 @@
   <title>Gestor Predictivo de Insumos - LoomTech</title>
   
   <link rel="stylesheet" href="general.css">
-  
-  <!-- Librerías Externas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
@@ -59,6 +57,11 @@
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     .table-row-clickable { cursor: pointer; transition: background 0.2s; }
     .table-row-clickable:hover { background: #18223d; }
+    
+    /* Cabeceras de tabla ordenables */
+    .sortable { cursor: pointer; transition: color 0.2s; user-select: none; }
+    .sortable:hover { color: #fff; }
+    .sort-icon { font-size: 0.75rem; margin-left: 4px; color: var(--primary); }
     
     .select-dark { background: #0f172a; color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; }
     .search-input { width: 220px; }
@@ -174,11 +177,11 @@
       <table class="table-dark">
         <thead>
           <tr>
-            <th>SKU / Alias</th>
-            <th>Historial</th>
-            <th>Consumo</th>
-            <th>Stock Est.</th>
-            <th>Estado Actual</th>
+            <th class="sortable" onclick="setSort('sku')">SKU / Alias <span class="sort-icon" id="sort-sku"></span></th>
+            <th class="sortable" onclick="setSort('history')">Historial <span class="sort-icon" id="sort-history"></span></th>
+            <th class="sortable" onclick="setSort('burn')">Consumo <span class="sort-icon" id="sort-burn"></span></th>
+            <th class="sortable" onclick="setSort('stock')">Stock Est. <span class="sort-icon" id="sort-stock"></span></th>
+            <th class="sortable" onclick="setSort('urgency')">Estado Actual <span class="sort-icon" id="sort-urgency"></span></th>
           </tr>
         </thead>
         <tbody id="inventoryTableBody"></tbody>
@@ -219,6 +222,10 @@
   let loadedInvoices = JSON.parse(localStorage.getItem('loomtech_invoices')) || [];
   let currentChart = null;
   let activeChartSku = null;
+
+  // Variables de ordenamiento
+  let currentSortColumn = 'urgency'; // Por defecto ordena por urgencia
+  let currentSortDirection = 'asc';
 
   function init() { 
     if (window.pdfjsLib) {
@@ -320,11 +327,10 @@
     }
   }
 
-  // --- EL CEREBRO DE EXTRACCIÓN ---
   function processExtractedText(text, fileName) {
+    const cleanText = text.replace(/["']/g, '');
     let dateStr = document.getElementById('invoiceDate').value;
     
-    // Auto-detectar la fecha en formatos CSV ("Date","03/26/24") o Texto plano (Date 03/26/2024)
     const dateRegex1 = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
     const dateRegex2 = /"Date","?(\d{2})\/(\d{2})\/(\d{4})"?/i;
     const dateMatch1 = dateRegex1.exec(text);
@@ -343,7 +349,6 @@
     const invoiceId = 'INV-' + Date.now();
     let itemsFound = 0;
 
-    // 1. Intentar el formato preciso con comillas dobles (PDF Extraído o CSV Puro)
     const regexCSV = /^"\d+","([^"]+)","([0-9\,]+)"/gm;
     let matchCSV;
     while ((matchCSV = regexCSV.exec(text)) !== null) {
@@ -353,12 +358,11 @@
       itemsFound++;
     }
 
-    // 2. Fallback para archivos de texto plano o viejos (Ignoramos comillas)
     if (itemsFound === 0) {
-      const cleanText = text.replace(/["']/g, '');
+      const cleanTextNoQuotes = text.replace(/["']/g, '');
       const regexSpace = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
       let matchSpace;
-      while ((matchSpace = regexSpace.exec(cleanText)) !== null) {
+      while ((matchSpace = regexSpace.exec(cleanTextNoQuotes)) !== null) {
         const sku = matchSpace[1];
         const qty = parseInt(matchSpace[2].replace(/,/g, ''), 10); 
         addPurchase(sku, qty, dateStr, invoiceId);
@@ -439,41 +443,67 @@
     }
   }
 
+  // --- MOTOR PREDICTIVO UNIFICADO ---
   function calculatePredictiveStatus(item) {
-    const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Ordenar con "T12:00:00" para coincidir matemáticamente con el gráfico
+    const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
+    
     if (history.length < 2) {
       let qty = history.length === 1 ? history[0].qty : 0;
-      return { dailyBurn: 0, estStock: qty, daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
+      // Prioridad 4 = Aprendiendo
+      return { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4 };
     }
 
-    const firstDate = new Date(history[0].date);
-    const lastDate = new Date(history[history.length - 1].date);
+    const firstDate = new Date(history[0].date + "T12:00:00");
+    const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
     const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
 
-    if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: 999, badge: 'status-gray', statusText: 'Aprendiendo...' };
+    if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4 };
 
     let totalConsumed = 0;
     for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
 
     const dailyBurn = totalConsumed / totalDays;
     const lastQty = history[history.length - 1].qty;
-    const daysSinceLastBuy = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
-    let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
+    const today = new Date();
     
+    const daysSinceLastBuy = (today - lastDate) / (1000 * 60 * 60 * 24);
+    let estStock = lastQty - (dailyBurn * daysSinceLastBuy);
     if (estStock < 0) estStock = 0;
-    const daysLeft = estStock / dailyBurn;
+    
+    // REDONDEO HACIA ARRIBA para la interfaz y lógica final
+    const roundedStock = Math.ceil(estStock);
+    const daysLeft = dailyBurn > 0 ? (estStock / dailyBurn) : Infinity;
 
-    let badge = 'status-green'; let statusText = 'En Stock';
-    if (daysLeft <= 7 || estStock === 0) { badge = 'status-red'; statusText = 'Urgente'; } 
-    else if (daysLeft <= 25) { badge = 'status-yellow'; statusText = 'Alerta Stock'; }
+    let badge = 'status-green'; let statusText = 'En Stock'; let priority = 3;
+    if (daysLeft <= 7 || roundedStock === 0) { badge = 'status-red'; statusText = 'Urgente'; priority = 1;} 
+    else if (daysLeft <= 25) { badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;}
 
-    return { dailyBurn: dailyBurn, estStock: Math.floor(estStock), daysLeft: daysLeft, badge: badge, statusText: statusText };
+    return { dailyBurn: dailyBurn, estStock: roundedStock, daysLeft: daysLeft, badge: badge, statusText: statusText, priority: priority };
+  }
+
+  // --- LÓGICA DE ORDENAMIENTO DE COLUMNAS ---
+  function setSort(column) {
+    if (currentSortColumn === column) {
+      currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSortColumn = column;
+      currentSortDirection = 'asc';
+    }
+    renderInventory();
   }
 
   function renderInventory() {
     const tbody = document.getElementById('inventoryTableBody');
     tbody.innerHTML = '';
     
+    // Resetear flechas en cabecera
+    document.querySelectorAll('.sort-icon').forEach(el => el.innerText = '');
+    const icon = currentSortDirection === 'asc' ? '▲' : '▼';
+    if(document.getElementById('sort-' + currentSortColumn)) {
+      document.getElementById('sort-' + currentSortColumn).innerText = icon;
+    }
+
     const keys = Object.keys(inventory);
     if (keys.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">El radar está vacío. Sube tu primer archivo PDF o CSV.</td></tr>';
@@ -496,7 +526,45 @@
     }
 
     let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
-    itemsWithStats.sort((a, b) => a.stats.daysLeft - b.stats.daysLeft);
+    
+    // APLICAR ORDENAMIENTO
+    itemsWithStats.sort((a, b) => {
+      let valA, valB;
+      switch(currentSortColumn) {
+        case 'sku':
+          valA = (a.item.alias || a.item.sku).toLowerCase();
+          valB = (b.item.alias || b.item.sku).toLowerCase();
+          break;
+        case 'history':
+          valA = a.item.history.length;
+          valB = b.item.history.length;
+          break;
+        case 'burn':
+          valA = a.stats.dailyBurn;
+          valB = b.stats.dailyBurn;
+          break;
+        case 'stock':
+          valA = a.stats.estStock;
+          valB = b.stats.estStock;
+          break;
+        case 'urgency':
+        default:
+          // Orden primario por nivel de prioridad (1 = urg, 4 = apr)
+          if (a.stats.priority !== b.stats.priority) {
+            valA = a.stats.priority;
+            valB = b.stats.priority;
+          } else {
+            // Orden secundario por dias restantes
+            valA = a.stats.daysLeft;
+            valB = b.stats.daysLeft;
+          }
+          break;
+      }
+      
+      if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
 
     itemsWithStats.forEach(data => {
       const { item, stats } = data;
@@ -529,7 +597,7 @@
     });
   }
 
-  // --- MOTOR GRÁFICO ---
+  // --- MOTOR GRÁFICO (MODAL Y CHART.JS) ---
   function openModal(sku) {
     activeChartSku = sku;
     const item = inventory[sku];
@@ -556,7 +624,7 @@
     if(!item) return;
 
     const stats = calculatePredictiveStatus(item);
-    const history = item.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
     
     let chartData = [];
     let currentStock = 0;
@@ -569,7 +637,7 @@
     if (history.length > 0) {
       currentStock = history[0].qty;
       const firstDate = new Date(history[0].date + "T12:00:00");
-      chartData.push({ x: firstDate.getTime(), y: currentStock });
+      chartData.push({ x: firstDate.getTime(), y: Math.ceil(currentStock) });
 
       for (let i = 1; i < history.length; i++) {
         const buyDate = new Date(history[i].date + "T12:00:00");
@@ -578,10 +646,10 @@
 
         let dropStock = currentStock - (dailyBurn * daysDiff);
         if (dropStock < 0) dropStock = 0;
-        chartData.push({ x: buyDate.getTime(), y: dropStock });
+        chartData.push({ x: buyDate.getTime(), y: Math.ceil(dropStock) });
 
         currentStock = dropStock + history[i].qty;
-        chartData.push({ x: buyDate.getTime(), y: currentStock });
+        chartData.push({ x: buyDate.getTime(), y: Math.ceil(currentStock) });
       }
 
       const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
@@ -589,14 +657,14 @@
       if (daysToToday > 0) {
         let todayStock = currentStock - (dailyBurn * daysToToday);
         if (todayStock < 0) todayStock = 0;
-        chartData.push({ x: today.getTime(), y: todayStock });
+        chartData.push({ x: today.getTime(), y: Math.ceil(todayStock) });
       }
     }
 
     const filteredData = chartData.filter(pt => pt.x >= cutoffDate.getTime());
     if (filteredData.length === 0 && chartData.length > 0) { filteredData.push(chartData[chartData.length - 1]); }
 
-    const warningThreshold = dailyBurn * 25;
+    const warningThreshold = Math.ceil(dailyBurn * 25);
     let thresholdData = [];
     if(filteredData.length > 0) {
         thresholdData = [
@@ -625,10 +693,10 @@
             pointBorderColor: '#3b5bfd',
             pointRadius: 4,
             fill: true,
-            tension: 0
+            tension: 0 
           },
           {
-            label: 'Alerta Re-Stock',
+            label: 'Alerta Re-Stock (25 días)',
             data: thresholdData,
             borderColor: 'rgba(245, 158, 11, 0.8)',
             borderWidth: 2,
