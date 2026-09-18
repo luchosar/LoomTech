@@ -55,7 +55,7 @@
     .table-dark { width: 100%; border-collapse: collapse; margin-top: 16px; color: var(--text-main); }
     .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
     .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-    .table-row-clickable { cursor: pointer; transition: background 0.2s; }
+    .table-row-clickable { cursor: pointer; transition: background 0.2s, opacity 0.2s; }
     .table-row-clickable:hover { background: #18223d; }
     
     .sortable { cursor: pointer; transition: color 0.2s; user-select: none; }
@@ -74,11 +74,14 @@
     .status-yellow { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
     .status-red { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     .status-gray { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .status-dark { background: rgba(15, 23, 42, 0.6); color: #475569; border: 1px dashed rgba(71, 85, 105, 0.5); }
+    
     .pulse-dot { width: 8px; height: 8px; border-radius: 50%; }
     .status-green .pulse-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
     .status-yellow .pulse-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
     .status-red .pulse-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
     .status-gray .pulse-dot { background: #94a3b8; }
+    .status-dark .pulse-dot { display: none; }
 
     .controls-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
 
@@ -389,7 +392,7 @@
   }
 
   function addPurchase(sku, qty, dateStr, invoiceId) {
-    if (!inventory[sku]) { inventory[sku] = { sku: sku, alias: "", history: [] }; }
+    if (!inventory[sku]) { inventory[sku] = { sku: sku, alias: "", history: [], doNotTrack: false }; }
     inventory[sku].history.push({ date: dateStr, qty: qty, invId: invoiceId });
   }
 
@@ -440,86 +443,96 @@
     }
   }
 
-  // --- MOTOR PREDICTIVO CON STOCK PROMEDIO HISTÓRICO ---
+  // --- NUEVA FUNCIÓN: TOGGLE "NO SEGUIR" ---
+  function toggleTracking(event, sku) {
+    event.stopPropagation();
+    inventory[sku].doNotTrack = !inventory[sku].doNotTrack;
+    saveData();
+    renderInventory();
+  }
+
+  // --- MOTOR PREDICTIVO CON ESTADOS Y PRIORIDADES ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
     
+    let baseStatus = {};
+
     if (history.length < 2) {
       let qty = history.length === 1 ? history[0].qty : 0;
-      // Priority 4 = Aprendiendo (Siempre va al final)
-      return { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
+      baseStatus = { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
+    } else {
+      const firstDate = new Date(history[0].date + "T12:00:00");
+      const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
+      const today = new Date();
+      today.setHours(12, 0, 0, 0); 
+
+      const totalDays = (lastDate - firstDate) / 86400000;
+      if (totalDays <= 0) {
+        baseStatus = { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
+      } else {
+        let totalConsumed = 0;
+        for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
+        const dailyBurn = totalConsumed / totalDays;
+
+        let currentS = history[0].qty;
+        let area = 0;
+        
+        for (let i = 1; i < history.length; i++) {
+          const d1 = new Date(history[i-1].date + "T12:00:00");
+          const d2 = new Date(history[i].date + "T12:00:00");
+          const days = (d2 - d1) / 86400000;
+          
+          let dropS = currentS - (dailyBurn * days);
+          if (dropS < 0) dropS = 0;
+          
+          area += ((currentS + dropS) / 2) * days;
+          currentS = dropS + history[i].qty;
+        }
+        
+        const daysToToday = (today - lastDate) / 86400000;
+        let estStock = currentS;
+        
+        if (daysToToday > 0) {
+          let todayS = currentS - (dailyBurn * daysToToday);
+          if (todayS < 0) todayS = 0;
+          area += ((currentS + todayS) / 2) * daysToToday;
+          estStock = todayS;
+        } else if (daysToToday < 0) {
+          estStock = currentS; 
+        }
+
+        const totalDaysToToday = (today - firstDate) / 86400000;
+        const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : history[0].qty;
+        
+        const roundedStock = Math.ceil(estStock);
+        const alertThreshold = Math.ceil(historicalAvgStock);
+        const urgentThreshold = Math.ceil(historicalAvgStock * 0.6);
+
+        let badge = 'status-green'; 
+        let statusText = 'En Stock'; 
+        let priority = 3;
+
+        if (roundedStock <= urgentThreshold) { 
+          badge = 'status-red'; statusText = 'Urgente'; priority = 1;
+        } else if (roundedStock <= alertThreshold) { 
+          badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
+        }
+
+        baseStatus = { 
+          dailyBurn: dailyBurn, estStock: roundedStock, daysLeft: dailyBurn > 0 ? (estStock / dailyBurn) : Infinity, 
+          badge: badge, statusText: statusText, priority: priority, alertThreshold: alertThreshold, urgentThreshold: urgentThreshold
+        };
+      }
     }
 
-    const firstDate = new Date(history[0].date + "T12:00:00");
-    const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
-    
-    const today = new Date();
-    today.setHours(12, 0, 0, 0); // Sincronizado a mediodía para igualar el gráfico
-
-    const totalDays = (lastDate - firstDate) / 86400000;
-    if (totalDays <= 0) return { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
-
-    let totalConsumed = 0;
-    for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
-    const dailyBurn = totalConsumed / totalDays;
-
-    // Cálculo matemático del "Promedio de Stock Histórico" (Área de la curva / Días Totales)
-    let currentS = history[0].qty;
-    let area = 0;
-    
-    for (let i = 1; i < history.length; i++) {
-      const d1 = new Date(history[i-1].date + "T12:00:00");
-      const d2 = new Date(history[i].date + "T12:00:00");
-      const days = (d2 - d1) / 86400000;
-      
-      let dropS = currentS - (dailyBurn * days);
-      if (dropS < 0) dropS = 0;
-      
-      // Suma del área de cada diente de sierra
-      area += ((currentS + dropS) / 2) * days;
-      currentS = dropS + history[i].qty;
-    }
-    
-    const daysToToday = (today - lastDate) / 86400000;
-    let estStock = currentS;
-    
-    if (daysToToday > 0) {
-      let todayS = currentS - (dailyBurn * daysToToday);
-      if (todayS < 0) todayS = 0;
-      area += ((currentS + todayS) / 2) * daysToToday;
-      estStock = todayS;
-    } else if (daysToToday < 0) {
-      estStock = currentS; // Prevención en caso de fechas futuras anómalas
+    // SI EL USUARIO ELIGIÓ "NO SEGUIR", SOBREESCRIBIMOS EL ESTADO VISUAL Y LA PRIORIDAD FINAL AL FONDO (5)
+    if (item.doNotTrack) {
+      baseStatus.badge = 'status-dark';
+      baseStatus.statusText = 'No Seguir';
+      baseStatus.priority = 5;
     }
 
-    const totalDaysToToday = (today - firstDate) / 86400000;
-    const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : history[0].qty;
-    
-    // Aplicamos Ceil (Redondeo hacia arriba) como pediste
-    const roundedStock = Math.ceil(estStock);
-    const alertThreshold = Math.ceil(historicalAvgStock);
-    const urgentThreshold = Math.ceil(historicalAvgStock * 0.6);
-
-    let badge = 'status-green'; 
-    let statusText = 'En Stock'; 
-    let priority = 3;
-
-    if (roundedStock <= urgentThreshold) { 
-      badge = 'status-red'; statusText = 'Urgente'; priority = 1;
-    } else if (roundedStock <= alertThreshold) { 
-      badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
-    }
-
-    return { 
-      dailyBurn: dailyBurn, 
-      estStock: roundedStock, 
-      daysLeft: dailyBurn > 0 ? (estStock / dailyBurn) : Infinity, 
-      badge: badge, 
-      statusText: statusText, 
-      priority: priority,
-      alertThreshold: alertThreshold,
-      urgentThreshold: urgentThreshold
-    };
+    return baseStatus;
   }
 
   function setSort(column) {
@@ -565,7 +578,7 @@
 
     let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
     
-    // Motor de Ordenamiento interactivo
+    // Motor de Ordenamiento
     itemsWithStats.sort((a, b) => {
       let valA, valB;
       switch(currentSortColumn) {
@@ -611,13 +624,20 @@
       
       const row = document.createElement('tr');
       row.className = 'table-row-clickable';
+      // Efecto visual: Toda la fila se atenúa si está ignorada
+      if (item.doNotTrack) row.style.opacity = '0.4';
       row.onclick = () => openModal(item.sku);
       
+      // Lógica de iconos del botón No Seguir
+      const trackIcon = item.doNotTrack ? '🔔' : '🔕';
+      const trackTitle = item.doNotTrack ? 'Reanudar seguimiento de stock' : 'Ignorar (Pausar alertas)';
+
       row.innerHTML = `
         <td>
           <div style="display:flex; align-items: center;">
             <div>${displayName}</div>
             <button class="btn-edit-alias" onclick="editAlias(event, '${item.sku}')" title="Asignar Alias">✏️</button>
+            <button class="btn-edit-alias" onclick="toggleTracking(event, '${item.sku}')" title="${trackTitle}" style="font-size:1.1rem;">${trackIcon}</button>
           </div>
         </td>
         <td style="color: #94a3b8;">${buyCount} fact.</td>
@@ -702,7 +722,6 @@
     const filteredData = chartData.filter(pt => pt.x >= cutoffDate.getTime());
     if (filteredData.length === 0 && chartData.length > 0) { filteredData.push(chartData[chartData.length - 1]); }
 
-    // Dibuja la línea horizontal Amarilla basándose en el Promedio Histórico
     const warningThreshold = stats.alertThreshold || 0;
     let thresholdData = [];
     if(filteredData.length > 0 && warningThreshold > 0) {
