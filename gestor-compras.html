@@ -63,9 +63,18 @@
     .sort-icon { font-size: 0.75rem; margin-left: 4px; color: var(--primary); }
     
     .select-dark { background: #0f172a; color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; }
-    .search-input { width: 220px; }
+    .search-input { width: 200px; }
     input[type="date"] { background: #0f172a; color: white; color-scheme: dark; margin-bottom: 16px;}
     
+    .filter-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #0f172a; border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;
+      color: #cbd5e1; cursor: pointer; user-select: none; margin: 0;
+    }
+    .filter-toggle:hover { border-color: #475569; }
+    .filter-toggle input { cursor: pointer; margin: 0; }
+
     .btn-edit-alias { background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.5; transition: 0.2s; margin-left: 8px; }
     .btn-edit-alias:hover { opacity: 1; transform: scale(1.1); }
 
@@ -83,7 +92,7 @@
     .status-gray .pulse-dot { background: #94a3b8; }
     .status-dark .pulse-dot { display: none; }
 
-    .controls-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
+    .controls-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
 
     /* MODAL FLOTANTE */
     .modal-overlay {
@@ -155,13 +164,25 @@
     <!-- PANEL DERECHO -->
     <div class="table-panel">
       <div class="controls-top">
-        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
           <h2>Radar de Inventario</h2>
           <input type="text" id="searchInput" class="select-dark search-input" placeholder="🔍 Buscar SKU o Alias..." oninput="renderInventory()">
         </div>
         
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <label class="filter-toggle" title="Oculta los ítems marcados como 'No Seguir' o que llevan mucho tiempo sin comprarse">
+            <input type="checkbox" id="hideInactiveCheck" checked onchange="renderInventory()">
+            Ocultar Inactivos
+          </label>
+
+          <select id="activeWindowSelect" class="select-dark" onchange="renderInventory()" title="Tiempo máximo sin compras antes de considerar un ítem como Inactivo">
+            <option value="180">Activos: Últ. 6 meses</option>
+            <option value="365" selected>Activos: Últ. año</option>
+            <option value="730">Activos: Últ. 2 años</option>
+            <option value="99999">Activos: Siempre</option>
+          </select>
+
+          <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()" title="Escala de consumo">
             <option value="1">Diario</option>
             <option value="30" selected>Mensual</option>
             <option value="60">Bimestral</option>
@@ -188,9 +209,13 @@
         </thead>
         <tbody id="inventoryTableBody"></tbody>
       </table>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; text-align: right;">
-        * Haz clic en cualquier fila para ver la proyección gráfica.
-      </p>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+        <span id="hiddenCountMsg" style="font-size: 0.78rem; color: #64748b; font-weight: 600;"></span>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; text-align: right;">
+          * Haz clic en cualquier fila para ver la proyección gráfica.
+        </p>
+      </div>
     </div>
 
   </div>
@@ -443,7 +468,6 @@
     }
   }
 
-  // --- NUEVA FUNCIÓN: TOGGLE "NO SEGUIR" ---
   function toggleTracking(event, sku) {
     event.stopPropagation();
     inventory[sku].doNotTrack = !inventory[sku].doNotTrack;
@@ -451,45 +475,76 @@
     renderInventory();
   }
 
-  // --- MOTOR PREDICTIVO CON ESTADOS Y PRIORIDADES ---
+  // --- MOTOR PREDICTIVO CON DETECCIÓN DE OBSOLESCENCIA / INACTIVIDAD ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
-    
+    const maxInactiveDays = parseInt(document.getElementById('activeWindowSelect')?.value || 365);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+
     let baseStatus = {};
 
     if (history.length < 2) {
       let qty = history.length === 1 ? history[0].qty : 0;
-      baseStatus = { dailyBurn: 0, estStock: qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
+      const singleDate = history.length === 1 ? new Date(history[0].date + "T12:00:00") : today;
+      const daysSinceSingle = (today - singleDate) / 86400000;
+
+      if (daysSinceSingle > maxInactiveDays) {
+        baseStatus = { 
+          dailyBurn: 0, estStock: 0, daysLeft: Infinity, 
+          badge: 'status-dark', statusText: 'Inactivo', priority: 4.5, 
+          alertThreshold: 0, urgentThreshold: 0, isInactive: true 
+        };
+      } else {
+        baseStatus = { 
+          dailyBurn: 0, estStock: qty, daysLeft: Infinity, 
+          badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, 
+          alertThreshold: 0, urgentThreshold: 0, isInactive: false 
+        };
+      }
     } else {
-      const firstDate = new Date(history[0].date + "T12:00:00");
-      const lastDate = new Date(history[history.length - 1].date + "T12:00:00");
-      const today = new Date();
-      today.setHours(12, 0, 0, 0); 
+      // Tomamos las últimas 6 compras para que el consumo refleje la rotación más actual
+      const recentHistory = history.slice(-6);
+      const firstDate = new Date(recentHistory[0].date + "T12:00:00");
+      const lastDate = new Date(recentHistory[recentHistory.length - 1].date + "T12:00:00");
 
       const totalDays = (lastDate - firstDate) / 86400000;
+      const daysToToday = (today - lastDate) / 86400000;
+
       if (totalDays <= 0) {
-        baseStatus = { dailyBurn: 0, estStock: history[0].qty, daysLeft: Infinity, badge: 'status-gray', statusText: 'Aprendiendo...', priority: 4, alertThreshold: 0, urgentThreshold: 0 };
+        const isOldSameDay = daysToToday > maxInactiveDays;
+        const totalSameDayQty = recentHistory.reduce((acc, h) => acc + h.qty, 0);
+        baseStatus = { 
+          dailyBurn: 0, estStock: isOldSameDay ? 0 : totalSameDayQty, daysLeft: Infinity, 
+          badge: isOldSameDay ? 'status-dark' : 'status-gray', 
+          statusText: isOldSameDay ? 'Inactivo' : 'Aprendiendo...', 
+          priority: isOldSameDay ? 4.5 : 4, 
+          alertThreshold: 0, urgentThreshold: 0, isInactive: isOldSameDay 
+        };
       } else {
         let totalConsumed = 0;
-        for (let i = 0; i < history.length - 1; i++) { totalConsumed += history[i].qty; }
+        for (let i = 0; i < recentHistory.length - 1; i++) { totalConsumed += recentHistory[i].qty; }
         const dailyBurn = totalConsumed / totalDays;
 
-        let currentS = history[0].qty;
+        let currentS = recentHistory[0].qty;
         let area = 0;
         
-        for (let i = 1; i < history.length; i++) {
-          const d1 = new Date(history[i-1].date + "T12:00:00");
-          const d2 = new Date(history[i].date + "T12:00:00");
+        for (let i = 1; i < recentHistory.length; i++) {
+          const d1 = new Date(recentHistory[i-1].date + "T12:00:00");
+          const d2 = new Date(recentHistory[i].date + "T12:00:00");
           const days = (d2 - d1) / 86400000;
           
           let dropS = currentS - (dailyBurn * days);
           if (dropS < 0) dropS = 0;
           
           area += ((currentS + dropS) / 2) * days;
-          currentS = dropS + history[i].qty;
+          currentS = dropS + recentHistory[i].qty;
         }
         
-        const daysToToday = (today - lastDate) / 86400000;
+        const lastQty = recentHistory[recentHistory.length - 1].qty;
+        const expectedLastBatchDuration = dailyBurn > 0 ? (lastQty / dailyBurn) : maxInactiveDays;
+        const avgDaysBetweenPurchases = totalDays / (recentHistory.length - 1);
+
         let estStock = currentS;
         
         if (daysToToday > 0) {
@@ -502,7 +557,7 @@
         }
 
         const totalDaysToToday = (today - firstDate) / 86400000;
-        const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : history[0].qty;
+        const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : recentHistory[0].qty;
         
         const roundedStock = Math.ceil(estStock);
         const alertThreshold = Math.ceil(historicalAvgStock);
@@ -512,24 +567,38 @@
         let statusText = 'En Stock'; 
         let priority = 3;
 
-        if (roundedStock <= urgentThreshold) { 
+        // Si el stock llegó a 0 y superó la ventana de tiempo elegida (o excedió con creces su ciclo normal)
+        const isAbandoned = roundedStock === 0 && 
+                            daysToToday > maxInactiveDays && 
+                            daysToToday > Math.min(expectedLastBatchDuration * 2, avgDaysBetweenPurchases * 2.5);
+
+        if (isAbandoned) {
+          badge = 'status-dark';
+          statusText = 'Inactivo';
+          priority = 4.5;
+        } else if (roundedStock <= urgentThreshold) { 
           badge = 'status-red'; statusText = 'Urgente'; priority = 1;
         } else if (roundedStock <= alertThreshold) { 
           badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
         }
 
         baseStatus = { 
-          dailyBurn: dailyBurn, estStock: roundedStock, daysLeft: dailyBurn > 0 ? (estStock / dailyBurn) : Infinity, 
-          badge: badge, statusText: statusText, priority: priority, alertThreshold: alertThreshold, urgentThreshold: urgentThreshold
+          dailyBurn: isAbandoned ? 0 : dailyBurn, 
+          estStock: roundedStock, 
+          daysLeft: (dailyBurn > 0 && !isAbandoned) ? (estStock / dailyBurn) : Infinity, 
+          badge: badge, statusText: statusText, priority: priority, 
+          alertThreshold: alertThreshold, urgentThreshold: urgentThreshold,
+          isInactive: isAbandoned
         };
       }
     }
 
-    // SI EL USUARIO ELIGIÓ "NO SEGUIR", SOBREESCRIBIMOS EL ESTADO VISUAL Y LA PRIORIDAD FINAL AL FONDO (5)
+    // Si el usuario eligió "No Seguir" manualmente
     if (item.doNotTrack) {
       baseStatus.badge = 'status-dark';
       baseStatus.statusText = 'No Seguir';
       baseStatus.priority = 5;
+      baseStatus.isInactive = true;
     }
 
     return baseStatus;
@@ -547,7 +616,9 @@
 
   function renderInventory() {
     const tbody = document.getElementById('inventoryTableBody');
+    const hiddenMsg = document.getElementById('hiddenCountMsg');
     tbody.innerHTML = '';
+    if (hiddenMsg) hiddenMsg.innerText = '';
     
     document.querySelectorAll('.sort-icon').forEach(el => el.innerText = '');
     const icon = currentSortDirection === 'asc' ? '▲' : '▼';
@@ -561,9 +632,10 @@
       return;
     }
 
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const frameSelect = document.getElementById('timeFrameSelect');
     const frameDays = parseInt(frameSelect.value);
+    const hideInactive = document.getElementById('hideInactiveCheck')?.checked;
 
     let filteredItems = keys.map(k => inventory[k]).filter(item => {
       const matchSku = item.sku.toLowerCase().includes(searchTerm);
@@ -571,13 +643,28 @@
       return matchSku || matchAlias;
     });
 
-    if (filteredItems.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">No hay resultados.</td></tr>';
+    let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
+    
+    // Si "Ocultar Inactivos" está tildado y NO se está buscando algo específico en el buscador, filtramos inactivos
+    let hiddenCount = 0;
+    if (hideInactive && searchTerm === '') {
+      const beforeCount = itemsWithStats.length;
+      itemsWithStats = itemsWithStats.filter(data => !data.stats.isInactive);
+      hiddenCount = beforeCount - itemsWithStats.length;
+    }
+
+    if (hiddenMsg && hiddenCount > 0) {
+      hiddenMsg.innerText = `👁️ ${hiddenCount} ítem(s) inactivo(s) o ignorado(s) oculto(s)`;
+    }
+
+    if (itemsWithStats.length === 0) {
+      const emptyText = hiddenCount > 0 
+        ? `No hay ítems activos para mostrar (${hiddenCount} inactivos ocultos). Destilda "Ocultar Inactivos" para verlos.`
+        : `No hay resultados.`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">${emptyText}</td></tr>`;
       return;
     }
 
-    let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
-    
     // Motor de Ordenamiento
     itemsWithStats.sort((a, b) => {
       let valA, valB;
@@ -624,11 +711,9 @@
       
       const row = document.createElement('tr');
       row.className = 'table-row-clickable';
-      // Efecto visual: Toda la fila se atenúa si está ignorada
-      if (item.doNotTrack) row.style.opacity = '0.4';
+      if (stats.isInactive) row.style.opacity = '0.45';
       row.onclick = () => openModal(item.sku);
       
-      // Lógica de iconos del botón No Seguir
       const trackIcon = item.doNotTrack ? '🔔' : '🔕';
       const trackTitle = item.doNotTrack ? 'Reanudar seguimiento de stock' : 'Ignorar (Pausar alertas)';
 
