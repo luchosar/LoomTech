@@ -475,7 +475,7 @@
     renderInventory();
   }
 
-  // --- MOTOR PREDICTIVO CON DETECCIÓN DE OBSOLESCENCIA / INACTIVIDAD ---
+  // --- MOTOR PREDICTIVO CON UMBRALES INTELIGENTES Y DETECCIÓN DE INACTIVOS ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
     const maxInactiveDays = parseInt(document.getElementById('activeWindowSelect')?.value || 365);
@@ -503,15 +503,15 @@
         };
       }
     } else {
-      // Tomamos las últimas 6 compras para que el consumo refleje la rotación más actual
+      // Tomamos las últimas 6 compras para calcular el ritmo de consumo reciente (burn rate)
       const recentHistory = history.slice(-6);
-      const firstDate = new Date(recentHistory[0].date + "T12:00:00");
+      const firstRecentDate = new Date(recentHistory[0].date + "T12:00:00");
       const lastDate = new Date(recentHistory[recentHistory.length - 1].date + "T12:00:00");
 
-      const totalDays = (lastDate - firstDate) / 86400000;
+      const totalRecentDays = (lastDate - firstRecentDate) / 86400000;
       const daysToToday = (today - lastDate) / 86400000;
 
-      if (totalDays <= 0) {
+      if (totalRecentDays <= 0) {
         const isOldSameDay = daysToToday > maxInactiveDays;
         const totalSameDayQty = recentHistory.reduce((acc, h) => acc + h.qty, 0);
         baseStatus = { 
@@ -522,52 +522,56 @@
           alertThreshold: 0, urgentThreshold: 0, isInactive: isOldSameDay 
         };
       } else {
+        // 1. Calculamos el consumo diario sobre la ventana reciente
         let totalConsumed = 0;
-        for (let i = 0; i < recentHistory.length - 1; i++) { totalConsumed += recentHistory[i].qty; }
-        const dailyBurn = totalConsumed / totalDays;
+        for (let i = 0; i < recentHistory.length - 1; i++) {
+          totalConsumed += recentHistory[i].qty;
+        }
+        const dailyBurn = totalConsumed / totalRecentDays;
 
-        let currentS = recentHistory[0].qty;
-        let area = 0;
-        
-        for (let i = 1; i < recentHistory.length; i++) {
-          const d1 = new Date(recentHistory[i-1].date + "T12:00:00");
-          const d2 = new Date(recentHistory[i].date + "T12:00:00");
+        // 2. Simulamos el stock acumulado recorriendo TODA la historia para no perder remanentes previos
+        let currentS = history[0].qty;
+        for (let i = 1; i < history.length; i++) {
+          const d1 = new Date(history[i-1].date + "T12:00:00");
+          const d2 = new Date(history[i].date + "T12:00:00");
           const days = (d2 - d1) / 86400000;
           
           let dropS = currentS - (dailyBurn * days);
           if (dropS < 0) dropS = 0;
-          
-          area += ((currentS + dropS) / 2) * days;
-          currentS = dropS + recentHistory[i].qty;
+          currentS = dropS + history[i].qty;
         }
         
-        const lastQty = recentHistory[recentHistory.length - 1].qty;
-        const expectedLastBatchDuration = dailyBurn > 0 ? (lastQty / dailyBurn) : maxInactiveDays;
-        const avgDaysBetweenPurchases = totalDays / (recentHistory.length - 1);
-
         let estStock = currentS;
-        
         if (daysToToday > 0) {
           let todayS = currentS - (dailyBurn * daysToToday);
           if (todayS < 0) todayS = 0;
-          area += ((currentS + todayS) / 2) * daysToToday;
           estStock = todayS;
-        } else if (daysToToday < 0) {
-          estStock = currentS; 
         }
 
-        const totalDaysToToday = (today - firstDate) / 86400000;
-        const historicalAvgStock = totalDaysToToday > 0 ? (area / totalDaysToToday) : recentHistory[0].qty;
-        
+        // 3. Variables de lote y frecuencia para umbrales e inactividad
+        const lastQty = recentHistory[recentHistory.length - 1].qty;
+        const expectedLastBatchDuration = dailyBurn > 0 ? (lastQty / dailyBurn) : maxInactiveDays;
+        const avgDaysBetweenPurchases = totalRecentDays / (recentHistory.length - 1);
+
+        const totalQtyBought = recentHistory.reduce((acc, h) => acc + h.qty, 0);
+        const avgOrderQty = totalQtyBought / recentHistory.length;
+
+        // 4. Definimos umbrales basados en DÍAS DE COBERTURA (45 días Alerta, 21 días Urgente)
+        const targetAlertDays = 45;  // Días de anticipación para Alerta Amarilla
+        const targetUrgentDays = 21; // Días límite para Urgencia Roja
+
         const roundedStock = Math.ceil(estStock);
-        const alertThreshold = Math.ceil(historicalAvgStock);
-        const urgentThreshold = Math.ceil(historicalAvgStock * 0.6);
+        const daysLeft = dailyBurn > 0 ? (estStock / dailyBurn) : Infinity;
+
+        // El umbral en unidades será el stock para cubrir 45 días, o el 35% de una compra típica
+        const alertThreshold = Math.max(1, Math.ceil(Math.max(dailyBurn * targetAlertDays, avgOrderQty * 0.35)));
+        const urgentThreshold = Math.max(1, Math.ceil(Math.max(dailyBurn * targetUrgentDays, avgOrderQty * 0.18)));
 
         let badge = 'status-green'; 
         let statusText = 'En Stock'; 
         let priority = 3;
 
-        // Si el stock llegó a 0 y superó la ventana de tiempo elegida (o excedió con creces su ciclo normal)
+        // 5. Verificar si el ítem fue abandonado / descontinuado
         const isAbandoned = roundedStock === 0 && 
                             daysToToday > maxInactiveDays && 
                             daysToToday > Math.min(expectedLastBatchDuration * 2, avgDaysBetweenPurchases * 2.5);
@@ -576,16 +580,19 @@
           badge = 'status-dark';
           statusText = 'Inactivo';
           priority = 4.5;
-        } else if (roundedStock <= urgentThreshold) { 
-          badge = 'status-red'; statusText = 'Urgente'; priority = 1;
-        } else if (roundedStock <= alertThreshold) { 
-          badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
+        } else if (daysLeft <= 60) { 
+          // Solo evaluamos alertas si nos quedan menos de 60 días de autonomía
+          if (roundedStock <= urgentThreshold || daysLeft <= targetUrgentDays) { 
+            badge = 'status-red'; statusText = 'Urgente'; priority = 1;
+          } else if (roundedStock <= alertThreshold || daysLeft <= targetAlertDays) { 
+            badge = 'status-yellow'; statusText = 'Alerta Stock'; priority = 2;
+          }
         }
 
         baseStatus = { 
           dailyBurn: isAbandoned ? 0 : dailyBurn, 
           estStock: roundedStock, 
-          daysLeft: (dailyBurn > 0 && !isAbandoned) ? (estStock / dailyBurn) : Infinity, 
+          daysLeft: (dailyBurn > 0 && !isAbandoned) ? daysLeft : Infinity, 
           badge: badge, statusText: statusText, priority: priority, 
           alertThreshold: alertThreshold, urgentThreshold: urgentThreshold,
           isInactive: isAbandoned
@@ -839,7 +846,7 @@
             tension: 0 
           },
           {
-            label: `Alerta Re-Stock (Prom. Histórico: ${warningThreshold} U)`,
+            label: `Punto de Pedido Sugerido (${warningThreshold} U)`,
             data: thresholdData,
             borderColor: 'rgba(245, 158, 11, 0.8)',
             borderWidth: 2,
