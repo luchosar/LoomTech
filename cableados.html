@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unificador de Excel para Google Sheets - LoomTech</title>
+  <title>Constructor .harness (Excel a CAD) - LoomTech</title>
   
   <link rel="stylesheet" href="general.css">
-  <!-- Librería SheetJS para procesar y generar archivos Excel (.xlsx) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -29,69 +28,66 @@
     .header-title h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
     .header-title p { margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
 
-    .dashboard-layout { display: grid; grid-template-columns: 350px 1fr; gap: 24px; align-items: start; }
+    .dashboard-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
     
-    .control-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; position: sticky; top: 20px; }
+    .control-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 22px; border-radius: 12px; position: sticky; top: 20px; }
     .preview-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; overflow: hidden; }
     
     .input-dark, .select-dark {
       background: #0f172a; color: #fff; border: 1px solid var(--border);
-      padding: 9px 12px; border-radius: 6px; font-size: 0.88rem; width: 100%;
+      padding: 8px 12px; border-radius: 6px; font-size: 0.86rem; width: 100%;
     }
 
     .file-drop-area {
       position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      width: 100%; height: 130px; margin-top: 8px; margin-bottom: 16px;
+      width: 100%; height: 95px; margin-top: 6px; margin-bottom: 12px;
       border: 2px dashed #334155; border-radius: 8px; background: #0f172a;
-      transition: 0.2s; text-align: center; color: var(--text-muted); padding: 12px;
+      transition: 0.2s; text-align: center; color: var(--text-muted); padding: 10px;
     }
     .file-drop-area:hover { border-color: var(--primary); background: #18223d; }
-    .file-msg { font-size: 0.84rem; margin-top: 8px; font-weight: 600; }
+    .file-msg { font-size: 0.79rem; margin-top: 5px; font-weight: 600; }
     .file-input { position: absolute; left: 0; top: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
 
     .filter-option {
       display: flex; align-items: center; gap: 10px;
       background: #0f172a; border: 1px solid var(--border);
-      padding: 9px 12px; border-radius: 8px; margin-top: 8px;
-      font-size: 0.83rem; color: #cbd5e1; cursor: pointer; user-select: none;
+      padding: 8px 12px; border-radius: 8px; margin-top: 7px;
+      font-size: 0.81rem; color: #cbd5e1; cursor: pointer; user-select: none;
     }
-    .filter-option:hover { border-color: #475569; }
     .filter-option input { width: auto; margin: 0; cursor: pointer; }
 
     .stats-bar {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin: 14px 0; text-align: center;
+      margin: 12px 0; text-align: center;
     }
-    .stat-box { background: #0f172a; border: 1px solid var(--border); padding: 8px; border-radius: 8px; }
+    .stat-box { background: #0f172a; border: 1px solid var(--border); padding: 8px 4px; border-radius: 8px; }
     .stat-box strong { display: block; font-size: 1.1rem; color: #34d399; }
-    .stat-box span { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-box span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; }
 
-    .btn-sheets {
-      background: #10b981; color: #06281e; font-weight: 700;
+    .btn-generate {
+      background: var(--primary); color: #fff; font-weight: 700;
       border: none; padding: 13px 16px; border-radius: 8px;
       cursor: pointer; width: 100%; font-size: 0.95rem;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 18px; transition: 0.2s;
+      margin-top: 16px; transition: 0.2s;
     }
-    .btn-sheets:hover:not(:disabled) { background: #34d399; transform: translateY(-1px); }
-    .btn-sheets:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-generate:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* PESTAÑAS ESTILO EXCEL / GOOGLE SHEETS */
     .sheet-tabs {
       display: flex; gap: 8px; border-bottom: 1px solid var(--border);
       padding-bottom: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between;
       flex-wrap: wrap;
     }
-    .tab-group { display: flex; gap: 8px; }
+    .tab-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .tab-btn {
       background: #0f172a; color: var(--text-muted); border: 1px solid var(--border);
-      padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      padding: 8px 14px; border-radius: 8px; font-size: 0.83rem; font-weight: 600;
       cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px;
     }
-    .tab-btn:hover { color: #fff; border-color: #475569; }
     .tab-btn.active {
       background: rgba(59, 91, 253, 0.15); color: #fff;
-      border-color: var(--primary); box-shadow: 0 0 12px rgba(59, 91, 253, 0.2);
+      border-color: var(--primary);
     }
     .tab-badge {
       background: #1e293b; color: #94a3b8; padding: 2px 7px;
@@ -99,62 +95,41 @@
     }
     .tab-btn.active .tab-badge { background: var(--primary); color: #fff; }
 
-    /* TABLA DE VISTA PREVIA TIPO HOJA DE CÁLCULO */
     .table-scroll {
       width: 100%; overflow-x: auto; max-height: 72vh; overflow-y: auto;
       border: 1px solid var(--border); border-radius: 8px; background: #0f172a;
     }
-    .sheet-table {
+    .audit-table {
       width: 100%; border-collapse: collapse; font-size: 0.82rem; color: var(--text-main);
-      white-space: nowrap;
     }
-    .sheet-table th {
-      background: #1e293b; color: #cbd5e1; font-weight: 700; padding: 9px 12px;
-      text-align: left; border: 1px solid #334155; position: sticky; top: 0; z-index: 2;
-      font-size: 0.75rem; text-transform: uppercase;
+    .audit-table th {
+      background: #1e293b; color: #cbd5e1; font-weight: 700; padding: 10px 12px;
+      text-align: left; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 2;
+      font-size: 0.74rem; text-transform: uppercase;
     }
-    .sheet-table td {
-      padding: 7px 12px; border: 1px solid #1e293b; color: #e2e8f0;
+    .audit-table td {
+      padding: 8px 12px; border-bottom: 1px solid #1e293b; color: #e2e8f0; vertical-align: middle;
     }
-    .row-num {
-      background: #131b2e !important; color: #64748b !important;
-      text-align: center; font-family: monospace; font-size: 0.75rem;
-      width: 42px; user-select: none; border-right: 2px solid #334155 !important;
+    .audit-table tr:hover td { background: #151f38; }
+
+    .conn-thumb {
+      width: 34px; height: 34px; object-fit: contain; background: #fff;
+      border-radius: 6px; padding: 2px; border: 1px solid #334155; vertical-align: middle; margin-right: 6px;
     }
 
-    /* ESTILOS DE FILAS DENTRO DE LA HOJA UNIFICADA */
-    .row-connector-banner td {
-      background: rgba(59, 91, 253, 0.18) !important;
-      color: #60a5fa !important;
-      font-weight: 800;
-      font-size: 0.85rem;
-      border-top: 2px solid #3b5bfd !important;
-      border-bottom: 1px solid #3b5bfd !important;
-    }
-    .row-subheaders td {
-      background: #18223d !important;
-      color: #94a3b8 !important;
-      font-weight: 700;
-      font-size: 0.74rem;
-      text-transform: uppercase;
-    }
-    .row-blank-separator td {
-      background: #090d14 !important;
-      height: 22px;
-      padding: 2px 12px !important;
-      color: #334155 !important;
-      font-size: 0.7rem;
-      font-style: italic;
-      border-top: 1px dashed #1e293b !important;
-      border-bottom: 1px dashed #1e293b !important;
-    }
-    .row-empty-pin td { color: #64748b; }
+    .badge-ok { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
+    .badge-part { background: rgba(59,91,253,0.18); color: #60a5fa; border: 1px solid rgba(59,91,253,0.35); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; font-family: monospace; display: inline-flex; align-items: center; }
+    .badge-warn { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
+    .badge-splice { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
 
-    .empty-state {
-      text-align: center; padding: 80px 20px; color: var(--text-muted);
+    .code-preview {
+      font-family: monospace; font-size: 0.78rem; color: #34d399;
+      padding: 16px; margin: 0; white-space: pre-wrap; word-break: break-all;
     }
 
-    @media (max-width: 950px) {
+    .empty-state { text-align: center; padding: 75px 20px; color: var(--text-muted); }
+
+    @media (max-width: 980px) {
       .dashboard-layout { grid-template-columns: 1fr; }
       .control-panel { position: static; }
     }
@@ -162,14 +137,14 @@
 </head>
 <body>
 
-<div class="container" style="max-width: 1360px;">
+<div class="container" style="max-width: 1400px;">
   <!-- ENCABEZADO -->
   <div class="main-header">
     <div class="header-brand">
       <img src="logo-transparente.webp" alt="LoomTech" class="header-logo" onerror="this.style.display='none'">
       <div class="header-title">
-        <h1>Unificador de Pinouts & Cableados</h1>
-        <p>Reestructurador de archivos Excel (.xlsx) para Google Sheets</p>
+        <h1>Constructor de Proyectos .harness (Excel &rarr; CAD)</h1>
+        <p>Asignación de fichas Deutsch (DT/DTM/DTP), fotos visibles y distribución horizontal por distancia</p>
       </div>
     </div>
     <a href="index.html" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Hub</a>
@@ -177,84 +152,102 @@
 
   <div class="dashboard-layout">
     
-    <!-- PANEL IZQUIERDO: CARGA Y CONFIGURACIÓN DEL EXCEL -->
+    <!-- PANEL IZQUIERDO -->
     <div class="control-panel">
-      <h2>1. Subir Excel Original</h2>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
-        Carga el archivo <strong>.xlsx</strong> exportado del programa de diseño.
-      </p>
-
+      <h2>1. Planilla Excel de Pinouts</h2>
       <div class="file-drop-area">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:36px; height:36px; color:#34d399;">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:28px; height:28px; color:#34d399;">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
         </svg>
-        <span class="file-msg" id="fileMsg">Haz clic o arrastra tu archivo .xlsx aquí</span>
-        <input class="file-input" type="file" id="excelFileInput" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
+        <span class="file-msg" id="excelMsg">Haz clic o arrastra tu Excel (.xlsx) aquí</span>
+        <input class="file-input" type="file" id="excelInput" accept=".xlsx, .xls" onchange="handleExcelFile(event)">
+      </div>
+
+      <div class="flex-between" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
+        <h3 style="font-size: 0.9rem;">2. Librería de Conectores</h3>
+        <span id="libBadge" class="badge-ok" style="font-size: 0.68rem;">12 Fichas Base Activas</span>
+      </div>
+      <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">
+        Incluye DT, DTM y DTP. Puedes subir tu archivo <code>.harnesslib</code> para guardar más fichas en el navegador.
+      </p>
+
+      <div class="file-drop-area" style="height: 64px; margin-bottom: 8px;">
+        <span class="file-msg" id="libMsg" style="color: #60a5fa;">Subir librería .harnesslib (Opcional)</span>
+        <input class="file-input" type="file" id="libInput" accept=".harnesslib, .harness, .json" onchange="handleLibraryFile(event)">
       </div>
 
       <div class="stats-bar" id="statsBar" style="display: none;">
-        <div class="stat-box"><strong id="statWires">0</strong><span>Cables (H1)</span></div>
         <div class="stat-box"><strong id="statConnectors">0</strong><span>Conectores</span></div>
-        <div class="stat-box"><strong id="statPins">0</strong><span>Pines Tot.</span></div>
+        <div class="stat-box"><strong id="statWires">0</strong><span>Cables</span></div>
+        <div class="stat-box"><strong id="statSplices">0</strong><span>Uniones</span></div>
       </div>
 
-      <h3 style="font-size: 0.95rem; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px;">2. Configuración de Salida</h3>
+      <h3 style="font-size: 0.9rem; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
+        3. Distribución y Visualización
+      </h3>
 
-      <label>Nombre del archivo a descargar</label>
-      <input type="text" id="outFileName" class="input-dark" placeholder="Ej: Motor.Maxirally.Kaufmann_Unificado">
+      <div class="grid-2">
+        <div>
+          <label style="margin-top:4px;">Unidad col. "Largo"</label>
+          <select id="lengthUnitSelect" class="select-dark" onchange="rebuildHarness()">
+            <option value="cm" selected>Centímetros (cm)</option>
+            <option value="mm">Milímetros (mm)</option>
+          </select>
+        </div>
+        <div>
+          <label style="margin-top:4px;">Escala Horizontal X</label>
+          <select id="scaleXSelect" class="select-dark" onchange="rebuildHarness()" title="Qué tan lejos se ubican los conectores en el eje X según su largo">
+            <option value="0.6">Compacta (0.6x)</option>
+            <option value="1" selected>Real 1:1 (1 mm = 1 px)</option>
+            <option value="1.5">Amplia (1.5x)</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Estructura de la Hoja 2 (Pinouts)</label>
-      <select id="layoutModeSelect" class="select-dark" onchange="renderPreview()">
-        <option value="blocks" selected>Bloques con título por conector + fila en blanco</option>
-        <option value="column">Tabla continua (Columna "Conector") + fila en blanco</option>
-      </select>
+      <label>Nombre del archivo de salida</label>
+      <input type="text" id="outHarnessName" class="input-dark" placeholder="Motor.Maxirally.Kaufmann.harness">
 
-      <label class="filter-option" title="Elimina del Excel las columnas que estén 100% vacías en todo el archivo">
-        <input type="checkbox" id="chkRemoveEmptyCols" onchange="renderPreview()">
-        <span>Eliminar columnas totalmente vacías</span>
+      <label class="filter-option" title="Activa el bloque partImage y pinout para que la foto del conector sea visible directamente en el lienzo">
+        <input type="checkbox" id="chkShowPartImages" checked onchange="rebuildHarness()">
+        <span>Mostrar foto y pinout visible en los conectores</span>
       </label>
 
-      <label class="filter-option" title="Omite conectores que no tengan ningún cable conectado">
-        <input type="checkbox" id="chkHideEmptyConnectors" onchange="renderPreview()">
-        <span>Omitir conectores sin cables conectados</span>
+      <label class="filter-option" title="Si no se aclara Macho/Hembra en el Excel, asigna siempre la ficha Hembra (06-xS)">
+        <input type="checkbox" id="chkDefaultFemale" checked onchange="rebuildHarness()">
+        <span>Priorizar ficha Hembra (06-S) en DT / DTM / DTP</span>
       </label>
 
-      <label class="filter-option" title="Omite las cavidades vacías dentro de cada conector">
-        <input type="checkbox" id="chkHideEmptyPins" onchange="renderPreview()">
-        <span>Omitir pines/cavidades libres</span>
+      <label class="filter-option">
+        <input type="checkbox" id="chkIncludeUnions" checked onchange="rebuildHarness()">
+        <span>Incluir nodos para "Uniones" (5V, 0V, GND, 12V)</span>
       </label>
 
-      <label class="filter-option" title="Quita los símbolos ■■ delante del nombre del color para filtrar mejor en Google Sheets">
-        <input type="checkbox" id="chkCleanColorSquares" onchange="renderPreview()">
-        <span>Limpiar símbolos (■) en columna Color</span>
-      </label>
-
-      <button type="button" class="btn-sheets" id="btnDownloadExcel" onclick="downloadUnifiedExcel()" disabled>
-        📥 Descargar Excel (.xlsx) para Sheets
+      <button type="button" class="btn-generate" id="btnDownloadHarness" onclick="downloadHarnessFile()" disabled>
+        ⚡ Descargar Archivo .harness
       </button>
     </div>
 
-    <!-- PANEL DERECHO: VISTA PREVIA DE LAS 2 HOJAS DEL EXCEL -->
+    <!-- PANEL DERECHO: AUDITORÍA -->
     <div class="preview-panel">
       <div class="sheet-tabs">
         <div class="tab-group">
-          <button type="button" class="tab-btn active" id="tabBtnPinout" onclick="switchTab('pinout')">
-            🔌 Hoja 2: Pinout Unificado <span class="tab-badge" id="badgePinoutRows">0 filas</span>
+          <button type="button" class="tab-btn active" id="tabConnectors" onclick="switchView('connectors')">
+            🧩 Conectores, Fotos y Posición X <span class="tab-badge" id="badgeConnectors">0</span>
           </button>
-          <button type="button" class="tab-btn" id="tabBtnAll" onclick="switchTab('all')">
-            📋 Hoja 1: Todos los Cables (All) <span class="tab-badge" id="badgeAllRows">0 filas</span>
+          <button type="button" class="tab-btn" id="tabWires" onclick="switchView('wires')">
+            🔌 Cables Generados (Wires) <span class="tab-badge" id="badgeWires">0</span>
+          </button>
+          <button type="button" class="tab-btn" id="tabJson" onclick="switchView('json')">
+            { } JSON .harness
           </button>
         </div>
-        <span style="font-size: 0.78rem; color: var(--text-muted);" id="previewHint">
-          Vista previa exacta de las celdas que se exportarán
-        </span>
       </div>
 
-      <div id="previewContainer" class="table-scroll">
+      <div id="viewContainer" class="table-scroll">
         <div class="empty-state">
-          <h3 style="color: #cbd5e1; margin-bottom: 8px;">Sube tu archivo Excel (.xlsx) en el panel izquierdo</h3>
-          <p style="font-size: 0.88rem; max-width: 480px; margin: 0 auto; line-height: 1.5;">
-            El sistema mantendrá la <strong>Hoja 1 (All)</strong> intacta y fusionará todas las hojas de conectores en una <strong>Hoja 2 (Pinout Unificado)</strong>, colocando un conector debajo del otro separados por una fila en blanco.
+          <h3 style="color: #cbd5e1; margin-bottom: 8px;">Sube tu Excel de Pinouts en el panel izquierdo</h3>
+          <p style="font-size: 0.86rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
+            Los conectores quedarán libres (sin ramales forzados) y se distribuirán horizontalmente hacia la derecha partiendo desde el conector principal (<strong>Link Firewall Engine</strong>) según la distancia en centímetros de la columna <strong>Largo</strong>.
           </p>
         </div>
       </div>
@@ -264,330 +257,1152 @@
 </div>
 
 <script>
-  let parsedWorkbookData = null;
-  let currentActiveTab = 'pinout'; // 'pinout' o 'all'
+  // =========================================================================
+  // 1. CATÁLOGO INTEGRADO DE FICHAS DEUTSCH (DT, DTM, DTP - HEMBRA Y MACHO)
+  // =========================================================================
+  const BUILTIN_DEUTSCH_PARTS = [
+    {
+      "id": "evz0YJ9-wX1SHOpZ72TSk",
+      "partNumber": "DTM06-2S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 2-way Female Plug, size 20.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 2,
+      "url": "https://www.te.com/usa-en/product-DTM06-2S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/62S/DTM06-2S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/62S/DTM06-2S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm06-2s",
+        "top": { "width": 27.5, "height": 12.01, "rear": { "at": -0.02, "boot": [0.33, 11.68], "exit": "back", "exits": [[0.96, 11.05]] }, "lines": [[[0.09,0.76],[4.8,0.98],[4.53,2.03],[0.13,2.03]],[[0.09,11.25],[4.8,11.03],[4.53,9.98],[0.13,9.98]],[[10.32,3.47],[20.75,3.47]],[[10.32,8.54],[20.75,8.54]],[[20.75,0.13],[20.75,11.88]]], "outline": [[[0.21,0],[21,0],[21.75,0.71],[27.11,0.71],[27.5,1],[27.5,11.01],[27.11,11.3],[21.75,11.3],[21,12.01],[0.21,12.01],[0,11.8],[0,0.21]]] },
+        "side": { "width": 27.5, "height": 12.86, "rear": { "at": -0.02, "boot": [4.66, 10.73], "exit": "back", "exits": [[4.93, 9.98]] }, "lines": [[[4.73,3.95],[20.63,3.95]],[[21.46,4.69],[21.46,12.17]]], "outline": [[[0.36,0],[19.05,0],[20.75,1.71],[20.75,4.15],[21.5,4.65],[27.11,4.65],[27.5,4.95],[27.5,11.86],[27.05,12.16],[21.46,12.7],[21.36,12.86],[6.66,12.86],[6.2,12.41],[6.2,11.41],[5.86,11.05],[0.25,11.05],[0,10.8],[0,0.36]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-2", "name": "DTM 2-way", "mirrored": true,
+        "pins": [{ "x": 2.095, "y": 0, "size": 3.2 }, { "x": -2.095, "y": 0, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 12.6, "height": 9.2, "cornerRadius": 2 },
+        "features": [{ "y": -4.6, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "B40TQEhfrwHl1L6yESUMK",
+      "partNumber": "DTM06-3S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 3-way Female Plug, size 20.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 3,
+      "url": "https://www.te.com/usa-en/product-DTM06-3S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/63S/DTM06-3S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/63S/DTM06-3S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm06-3s",
+        "top": { "width": 27.46, "height": 16.25, "rear": { "at": -0.02, "boot": [0.6, 15.7], "exit": "back", "exits": [[2.08, 14.29]] }, "lines": [[[6.78,5.63],[20.59,5.56]],[[6.8,10.62],[20.58,10.63]],[[20.59,0.21],[20.62,15.78]],[[26.81,0.91],[26.81,15.35]]], "outline": [[[0.35,0],[20.61,0],[21.46,0.71],[26.66,0.65],[27.46,1.15],[27.46,15.16],[26.71,15.55],[21.41,15.55],[20.61,16.25],[0.35,16.25],[0,15.91],[0,0.35]]] },
+        "side": { "width": 27.5, "height": 14.01, "rear": { "at": -0.02, "boot": [5.02, 12.15], "exit": "back", "exits": [[6.08, 11.23]] }, "lines": [[[0.56,5.05],[20.5,5.02]],[[20.6,5.34],[20.6,13.71]]], "outline": [[[2.46,0],[6.45,0],[7.2,1.06],[18.75,1.15],[20.5,2.95],[20.61,5.01],[21.46,5.76],[26.75,5.76],[27.5,6.45],[27.5,12.61],[26.75,13.26],[21.46,13.26],[20.5,14.01],[6.61,14.01],[6.2,13.66],[6.2,12.51],[5.86,12.16],[0.21,12.16],[0,11.95],[0,1.96],[1.9,0.75],[2.25,0.11]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-3", "name": "DTM 3-way", "mirrored": true,
+        "pins": [{ "x": 4.19, "y": 0, "size": 3.2 }, { "x": 0, "y": 0, "size": 3.2 }, { "x": -4.19, "y": 0, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 16.8, "height": 9.2, "cornerRadius": 2 },
+        "features": [{ "y": -4.6, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "s7rfWyPInwMWliZGNFPQP",
+      "partNumber": "DTM06-4S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 4-way Female Plug, size 20, 2 rows.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 4,
+      "url": "https://www.te.com/usa-en/product-DTM06-4S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/64S/DTM06-4S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/64S/DTM06-4S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm06-4s",
+        "top": { "width": 30.1, "height": 15.2, "rear": { "at": -0.03, "boot": [0.52, 14.86], "exit": "back", "exits": [[1.62, 13.63]] }, "lines": [[[0.09,4.47],[23.32,5.1]],[[0.08,10.82],[23.36,10.14]],[[23.4,0.78],[23.37,14.41]],[[29.5,1.46],[29.57,13.82]]], "outline": [[[0.3,0],[11.85,0],[12.4,0.5],[23.3,0.5],[24.1,1.2],[29.35,1.2],[30.1,1.6],[30.1,13.65],[29.4,14.05],[24.15,14.05],[23.3,14.75],[12.3,14.75],[11.7,15.2],[0.25,15.2],[0,14.95],[0,0.3]]] },
+        "side": { "width": 30.16, "height": 17.55, "rear": { "at": -0.02, "boot": [4.95, 16.98], "exit": "back", "exits": [[6.1, 16.13]] }, "lines": [[[12.18,4.97],[12.18,17.03]],[[23.37,5.38],[23.37,16.87]]], "outline": [[[4.9,0],[9.16,0],[9.91,1.1],[21.25,1.05],[23.3,3.1],[23.36,5.05],[24.21,5.75],[29.46,5.7],[30.16,6.55],[30.11,15.9],[29.41,16.35],[24.05,16.4],[23.25,17.05],[12.45,17.05],[11.86,17.55],[0.25,17.55],[0,17.25],[0,4.9],[2.25,4.55],[2.61,4.2],[2.61,1.85],[3.26,1.1],[4.56,0.35]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-4", "name": "DTM 4-way", "mirrored": true,
+        "pins": [{ "x": -3.56, "y": -2.1, "size": 3.2 }, { "x": -3.56, "y": 2.1, "size": 3.2 }, { "x": 3.56, "y": 2.1, "size": 3.2 }, { "x": 3.56, "y": -2.1, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 14.6, "height": 11.6, "cornerRadius": 2 },
+        "features": [{ "y": -5.8, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "FeIh97Iaw4-YFoN_bBpdY",
+      "partNumber": "DTM06-6S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 6-way Female Plug, size 20, 2 rows.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 6,
+      "url": "https://www.te.com/usa-en/product-DTM06-6S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/66S/DTM06-6S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/66S/DTM06-6S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm06-6s",
+        "top": { "width": 30, "height": 15.21, "rear": { "at": -0.02, "boot": [0.43, 14.83], "exit": "back", "exits": [[1.47, 13.77]] }, "lines": [[[0.32,4.45],[23.24,5.17]],[[0.11,10.87],[23.22,10.05]],[[29.35,1.43],[29.39,13.88]]], "outline": [[[0.36,0],[11.7,0],[12.3,0.56],[23.11,0.56],[24.16,1.21],[29.25,1.21],[30,2.15],[30,13.61],[29.36,14.05],[24.3,14.05],[23.11,14.75],[12.3,14.75],[11.8,15.21],[0.21,15.21],[0,15],[0,0.36]]] },
+        "side": { "width": 30, "height": 21.8, "rear": { "at": -0.02, "boot": [4.93, 21.13], "exit": "back", "exits": [[5.98, 20.3]] }, "lines": [[[12.06,5.1],[12.01,21.18]],[[29.37,5.92],[29.35,20.36]]], "outline": [[[4.9,0],[9.11,0],[9.86,1.06],[20.55,1],[23,2.7],[23.25,5.06],[24.05,5.7],[29.21,5.7],[30,6.15],[29.96,20.16],[29.11,20.55],[24.3,20.55],[22.91,21.25],[12.36,21.25],[11.66,21.8],[0.46,21.8],[0,21.46],[0,4.9],[2.21,4.56],[2.56,4.2],[2.56,1.86],[3.4,1.06],[4.7,0.11]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-6", "name": "DTM 6-way", "mirrored": true,
+        "pins": [
+          { "x": -3.56, "y": -4.19, "size": 3.2 }, { "x": -3.56, "y": 0, "size": 3.2 }, { "x": -3.56, "y": 4.19, "size": 3.2 },
+          { "x": 3.56, "y": 4.19, "size": 3.2 }, { "x": 3.56, "y": 0, "size": 3.2 }, { "x": 3.56, "y": -4.19, "size": 3.2 }
+        ],
+        "outline": { "type": "rect", "width": 14.2, "height": 16.1, "cornerRadius": 2 },
+        "features": [{ "y": -8.05, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "6LpQakQ0O3odrSNO9Enkk",
+      "partNumber": "DTM04-2P",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 2-way Male Receptacle, size 20.",
+      "gender": "Male",
+      "color": "Gray",
+      "numberOfCavities": 2,
+      "url": "https://www.te.com/usa-en/product-DTM04-2P.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/42P/DTM04-2P-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/42P/DTM04-2P-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm04-2p",
+        "top": { "width": 41.11, "height": 16.5, "rear": { "at": -0.02, "boot": [2.03, 14.43], "exit": "back", "exits": [[2.03, 14.43]] }, "lines": [[[18.9,14.68],[18.9,1.81]],[[26.65,14.09],[26.65,2.41]]], "outline": [[[19.36,0],[37.21,0],[37.65,0.46],[37.65,1.5],[38.06,1.9],[40.86,1.9],[41.11,2.15],[41.11,14.3],[40.86,14.55],[38.06,14.55],[37.65,14.96],[37.65,16.05],[37.21,16.5],[19.36,16.5],[18.91,16.05],[18.91,14.91],[18.5,14.5],[0.36,14.5],[0,14.16],[0,2.36],[0.36,2],[18.5,2],[18.91,1.61],[18.91,0.46]]] },
+        "side": { "width": 41.11, "height": 16.71, "rear": { "at": -0.02, "boot": [5.13, 14.18], "exit": "back", "exits": [[5.13, 14.18]] }, "lines": [[[18.9,15.09],[18.9,4.88]],[[37.69,15.63],[37.69,4.62]]], "outline": [[[27.05,0],[40.71,0],[41.11,0.41],[41.11,2.65],[38.96,3.61],[38.06,3.61],[37.65,4.01],[37.65,4.36],[38.06,4.76],[38.96,4.76],[39.21,5.01],[39.21,15.46],[38.96,15.71],[37.71,15.75],[37.21,16.16],[19.36,16.16],[18.75,15.75],[1,15.75],[0.65,15.41],[0.65,14.61],[0,13.91],[0,5.4],[0.36,5.06],[18.5,5.06],[18.91,4.65],[18.91,3.26],[19.36,2.81],[26.25,2.81],[26.66,2.4],[26.66,0.41]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-2", "name": "DTM 2-way",
+        "pins": [{ "x": -2.095, "y": 0, "size": 3.2 }, { "x": 2.095, "y": 0, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 12.6, "height": 9.2, "cornerRadius": 2 },
+        "features": [{ "y": -4.6, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "bdCdQzskCvaNW0VQDGf5I",
+      "partNumber": "DTM04-3P",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 3-way Male Receptacle, size 20.",
+      "gender": "Male",
+      "color": "Gray",
+      "numberOfCavities": 3,
+      "url": "https://www.te.com/usa-en/product-DTM04-3P.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/43P/DTM04-3P-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/43P/DTM04-3P-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm04-3p",
+        "top": { "width": 41.11, "height": 20.66, "rear": { "at": -0.02, "boot": [2.23, 18.48], "exit": "back", "exits": [[3.24, 17.48]] }, "lines": [[[18.9,18.67],[18.9,2.06]],[[26.65,16.18],[26.65,4.5]]], "outline": [[[19.25,0],[38.71,0.05],[38.96,0.3],[38.96,3.61],[39.36,4.01],[40.81,4.01],[41.11,4.31],[41.11,16.36],[40.81,16.66],[39.36,16.66],[38.96,17.05],[38.96,20.36],[38.75,20.61],[19.21,20.66],[18.91,20.36],[18.91,18.86],[18.5,18.46],[0.36,18.46],[0,18.11],[0,2.61],[0.36,2.25],[18.5,2.25],[18.91,1.86],[18.91,0.36]]] },
+        "side": { "width": 41.11, "height": 16.71, "rear": { "at": -0.02, "boot": [5.03, 16.18], "exit": "back", "exits": [[6.08, 11.16]] }, "lines": [[[18.9,15.54],[18.9,4.93]],[[37.69,16.03],[37.69,2.83]]], "outline": [[[27.05,0],[40.71,0],[41.11,0.41],[41.11,2.4],[38.96,3.11],[38.96,15.86],[38.65,16.11],[1,16.16],[0.65,15.8],[0.65,12.45],[0,11.8],[0,5.4],[0.36,5.06],[18.55,5.06],[18.91,4.7],[18.91,3.2],[19.25,2.86],[26.3,2.86],[26.66,2.51],[26.66,0.41]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-3", "name": "DTM 3-way",
+        "pins": [{ "x": -4.19, "y": 0, "size": 3.2 }, { "x": 0, "y": 0, "size": 3.2 }, { "x": 4.19, "y": 0, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 16.8, "height": 9.2, "cornerRadius": 2 },
+        "features": [{ "y": -4.6, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "132tnkDKYZVpTWXG5G8WX",
+      "partNumber": "DTM04-4P",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 4-way Male Receptacle, size 20.",
+      "gender": "Male",
+      "color": "Gray",
+      "numberOfCavities": 4,
+      "url": "https://www.te.com/usa-en/product-DTM04-4P.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/44P/DTM04-4P-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/44P/DTM04-4P-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm04-4p",
+        "top": { "width": 43.61, "height": 19.16, "rear": { "at": -0.02, "boot": [1.95, 17.18], "exit": "back", "exits": [[3.56, 15.6]] }, "lines": [[[21.39,17.24],[21.4,2.12]]], "outline": [[[21.75,0],[41.31,0.05],[41.56,0.3],[41.56,2.9],[41.9,3.26],[43.25,3.26],[43.61,3.61],[43.61,15.61],[43.25,15.96],[41.9,15.96],[41.56,16.3],[41.56,18.86],[41.31,19.11],[21.75,19.16],[21.3,18.71],[21.3,17.5],[20.96,17.16],[0.36,17.16],[0,16.8],[0,2.31],[0.46,1.96],[20.96,1.96],[21.3,1.61],[21.3,0.46]]] },
+        "side": { "width": 43.56, "height": 19.96, "rear": { "at": -0.02, "boot": [4.48, 17.68], "exit": "back", "exits": [[5.98, 15.98]] }, "lines": [[[21.35,17.01],[21.35,4.46]],[[40.21,4.68],[40.21,18.23]]], "outline": [[[29.36,0],[43.56,0.11],[43.56,3.31],[41.56,4.15],[41.56,19.3],[41.25,19.61],[21.3,19.66],[3.4,19.55],[3.11,19.25],[3.11,18],[2.76,17.66],[0.11,17.66],[0,17.55],[0,4.86],[0.36,4.51],[20.96,4.51],[21.3,4.15],[21.3,2.95],[21.75,2.51],[28.66,2.51],[29,2.15],[29,0.36]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-4", "name": "DTM 4-way",
+        "pins": [{ "x": 3.56, "y": -2.1, "size": 3.2 }, { "x": 3.56, "y": 2.1, "size": 3.2 }, { "x": -3.56, "y": 2.1, "size": 3.2 }, { "x": -3.56, "y": -2.1, "size": 3.2 }],
+        "outline": { "type": "rect", "width": 14.6, "height": 11.6, "cornerRadius": 2 },
+        "features": [{ "y": -5.8, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "ghAdonGYk6u30bEgrBZNf",
+      "partNumber": "DTM04-6P",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTM series, 6-way Male Receptacle, size 20.",
+      "gender": "Male",
+      "color": "Gray",
+      "numberOfCavities": 6,
+      "url": "https://www.te.com/usa-en/product-DTM04-6P.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/46P/DTM04-6P-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/00D/TM0/46P/DTM04-6P-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtm04-6p",
+        "top": { "width": 43.65, "height": 19.11, "rear": { "at": -0.02, "boot": [1.93, 17.11], "exit": "back", "exits": [[3.51, 15.69]] }, "lines": [[[21.39,17.15],[21.44,1.97]]], "outline": [[[21.86,0],[41.25,0.05],[41.56,0.3],[41.56,2.95],[41.9,3.31],[43.36,3.31],[43.65,3.7],[43.65,15.46],[43.21,15.91],[41.9,15.91],[41.56,16.25],[41.56,18.8],[41.31,19.05],[21.86,19.11],[21.46,18.75],[21.46,17.46],[21.11,17.11],[0.46,17.11],[0,16.75],[0,2.31],[0.36,1.96],[21.11,1.96],[21.46,1.61],[21.46,0.36]]] },
+        "side": { "width": 43.61, "height": 24.16, "rear": { "at": -0.02, "boot": [4.48, 21.43], "exit": "back", "exits": [[5.93, 20.08]] }, "lines": [[[21.41,21],[21.41,4.51]]], "outline": [[[29.55,0],[43.25,0],[43.61,0.36],[43.61,3.01],[41.56,4.06],[41.56,23.41],[41.36,23.66],[3.51,23.71],[3.11,23.41],[3.11,21.75],[2.76,21.41],[0.3,21.41],[0,21.11],[0,4.86],[0.36,4.51],[21.11,4.51],[21.46,4.15],[21.46,2.9],[21.86,2.56],[28.86,2.56],[29.21,2.21],[29.21,0.41]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtm-6", "name": "DTM 6-way",
+        "pins": [
+          { "x": 3.56, "y": -4.19, "size": 3.2 }, { "x": 3.56, "y": 0, "size": 3.2 }, { "x": 3.56, "y": 4.19, "size": 3.2 },
+          { "x": -3.56, "y": 4.19, "size": 3.2 }, { "x": -3.56, "y": 0, "size": 3.2 }, { "x": -3.56, "y": -4.19, "size": 3.2 }
+        ],
+        "outline": { "type": "rect", "width": 14.2, "height": 16.1, "cornerRadius": 2 },
+        "features": [{ "y": -8.05, "layer": "behind", "shape": { "type": "rect", "width": 6, "height": 3 } }]
+      }
+    },
+    {
+      "id": "4GOVrY6tdin7FbaENdulZ",
+      "partNumber": "DT06-2S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DT series, 2-way Female Plug, size 16.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 2,
+      "url": "https://www.te.com/usa-en/product-DT06-2S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/62S/DT06-2S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/62S/DT06-2S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dt06-2s",
+        "top": { "width": 28.36, "height": 16.05, "rear": { "at": -0.02, "boot": [1.78, 14.18], "exit": "back", "exits": [[1.78, 14.18]] }, "lines": [[[11.75,1.56],[11.75,14.47]],[[24.18,15.63],[24.18,0.46]]], "outline": [[[24.46,0],[26.96,0],[28.36,1.35],[28.36,14.71],[26.86,16.05],[24.55,16.05],[23.86,15.5],[12.11,15.5],[11.76,15.16],[11.76,14.66],[11.36,14.25],[0.36,14.25],[0,13.91],[0,2.11],[0.36,1.75],[11.36,1.75],[11.76,1.35],[11.76,0.9],[12.11,0.56],[23.86,0.56]]] },
+        "side": { "width": 28.36, "height": 16.86, "rear": { "at": -0.02, "boot": [6.03, 13.53], "exit": "back", "exits": [[6.03, 13.53]] }, "lines": [[[11.75,7.08],[11.75,15.31]],[[24.18,16.46],[24.18,4.73]]], "outline": [[[2.21,0],[3.01,0],[3.31,0.71],[8.36,0.86],[20.3,1.75],[22.36,3.15],[23.05,4.76],[23.86,4.81],[24.55,4.26],[26.86,4.26],[28.36,5.61],[28.36,15.5],[27,16.86],[24.41,16.86],[23.86,16.36],[12.01,16.36],[11.76,16.11],[11.76,15.5],[11.36,15.11],[4.26,15.11],[4.06,14.91],[4.06,13.95],[3.65,13.55],[0.3,13.55],[0,13.26],[0,6.36],[0.41,5.81],[0.41,1.15],[1.65,0.5]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dt-2", "name": "DT 2-way", "mirrored": true,
+        "pins": [{ "x": 2.73, "y": 0, "size": 4.2 }, { "x": -2.73, "y": 0, "size": 4.2 }],
+        "outline": { "type": "rect", "width": 15.1, "height": 11.7, "cornerRadius": 2.5 },
+        "features": [{ "y": -5.85, "layer": "behind", "shape": { "type": "rect", "width": 8.5, "height": 3 } }]
+      }
+    },
+    {
+      "id": "skmKhPgEr-2WVXAryI97c",
+      "partNumber": "DT06-3S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DT series, 3-way Female Plug, size 16.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 3,
+      "designationStrategy": { "type": "alphabetical" },
+      "url": "https://www.te.com/usa-en/product-DT06-3S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/63S/DT06-3S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/63S/DT06-3S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dt06-3s",
+        "top": { "width": 28.36, "height": 19.41, "rear": { "at": -0.02, "boot": [1.81, 17.61], "exit": "back", "exits": [[2.81, 16.61]] }, "lines": [[[3.76,5.71],[22.68,5.71],[22.68,13.71],[3.76,13.71],[3.76,5.71]],[[25.08,18.98],[25.08,0.48]]], "outline": [[[25.25,0],[26.46,0],[28.36,1.5],[28.36,17.91],[26.46,19.41],[25.25,19.41],[24.55,18.91],[13.05,18.91],[13.05,18.1],[12.7,17.75],[0.41,17.75],[0,17.46],[0,2],[0.25,1.7],[12.7,1.7],[13.05,1.35],[13.05,0.55],[24.55,0.55]]] },
+        "side": { "width": 28.36, "height": 24.21, "rear": { "at": -0.02, "boot": [7.68, 22.48], "exit": "back", "exits": [[8.48, 20.28]] }, "lines": [[[13.02,22.61],[13.02,6.71]],[[24.57,6.66],[24.57,23.61]]], "outline": [[[4.26,0],[8.3,0],[8.76,0.46],[8.76,2.36],[9.11,2.7],[12.55,2.95],[12.91,2.61],[12.91,1.5],[13.8,1.5],[16.41,3.01],[21.71,3.01],[22.66,3.95],[22.66,6.2],[23,6.55],[24.55,6.55],[27.11,6.66],[28.36,7.45],[28.36,22.71],[26.46,24.21],[24.55,23.71],[13.05,23.71],[13.05,22.86],[12.7,22.5],[0.16,22.5],[0,22.36],[0,7.86],[0.21,7.66],[3.45,7.66],[3.81,7.3],[3.81,4.61],[3.76,0.5],[4.2,0.05]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dt-3", "name": "DT 3-way", "mirrored": true,
+        "pins": [{ "x": -4.33, "y": -2.5, "size": 5 }, { "x": 4.33, "y": -2.5, "size": 5 }, { "x": 0, "y": 4.9, "size": 5 }],
+        "outline": { "type": "polygon", "points": [[0, 14], [-11.2, -7], [11.2, -7]], "cornerRadius": 4 },
+        "features": [{ "y": -7, "layer": "behind", "shape": { "type": "rect", "width": 10, "height": 3 } }]
+      }
+    },
+    {
+      "id": "tmm8LDYNj0_0MWoKc8mWq",
+      "partNumber": "DT06-4S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DT series, 4-way Female Plug, size 16, 2 rows.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 4,
+      "url": "https://www.te.com/usa-en/product-DT06-4S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/64S/DT06-4S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/64S/DT06-4S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dt06-4s",
+        "top": { "width": 30.9, "height": 19.55, "rear": { "at": -0.02, "boot": [0.68, 18.88], "exit": "back", "exits": [[2.45, 17.11]] }, "lines": [[[24.88,7.28],[0.88,7.28],[0.38,7.78],[0.38,11.78],[0.88,12.28],[24.88,12.28]],[[27.11,18.67],[27.11,0.89]]], "outline": [[[27.66,0],[28.86,0],[29.55,0.96],[30.9,1.55],[30.9,18],[29.55,18.6],[28.86,19.55],[27.66,19.55],[27,18.85],[0.16,18.85],[0,18.71],[0,0.86],[0.16,0.71],[27,0.71]]] },
+        "side": { "width": 30.9, "height": 19.05, "rear": { "at": -0.02, "boot": [4.38, 18.38], "exit": "back", "exits": [[6.08, 16.63]] }, "lines": [[[27.11,4.58],[27.11,18.17]]], "outline": [[[1.21,0],[4.9,0],[10.16,0.86],[10.55,1.15],[22.66,1.15],[23.8,1.46],[24.71,2.25],[25.16,3.15],[25.66,4.36],[27.46,4.26],[29.55,4.65],[30.9,5.26],[30.9,17.5],[29.55,18.11],[28.86,19.05],[27.66,19.05],[27,18.36],[0.16,18.36],[0,18.21],[0,4.56],[0.36,4.11],[0.36,0.9],[0.9,0.05]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dt-4", "name": "DT 4-way", "mirrored": true,
+        "pins": [{ "x": -4.56, "y": -2.24, "size": 3.5 }, { "x": -4.56, "y": 2.24, "size": 3.5 }, { "x": 4.56, "y": 2.24, "size": 3.5 }, { "x": 4.56, "y": -2.24, "size": 3.5 }],
+        "outline": { "type": "rect", "width": 18.6, "height": 14.3, "cornerRadius": 2.5 },
+        "features": [{ "y": -7.15, "layer": "behind", "shape": { "type": "rect", "width": 10, "height": 3 } }]
+      }
+    },
+    {
+      "id": "9p0ItSojkqIaiSrz5i1hu",
+      "partNumber": "DT06-6S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DT series, 6-way Female Plug, size 16, 2 rows.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 6,
+      "url": "https://www.te.com/usa-en/product-DT06-6S.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/66S/DT06-6S-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/66S/DT06-6S-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dt06-6s",
+        "top": { "width": 30.9, "height": 19.21, "rear": { "at": -0.02, "boot": [0.53, 18.68], "exit": "back", "exits": [[1.93, 17.23]] }, "lines": [[[24.88,7.1],[0.88,7.1],[0.38,7.6],[0.38,11.61],[0.88,12.11],[24.88,12.11]],[[26.71,0.61],[26.71,18.6]]], "outline": [[[27.55,0],[28.96,0],[29.75,0.46],[30.9,1.35],[30.9,17.85],[29.75,18.75],[28.96,19.21],[27.55,19.21],[26.55,18.66],[0.16,18.66],[0,18.5],[0,0.71],[0.16,0.56],[26.55,0.56]]] },
+        "side": { "width": 30.9, "height": 23.66, "rear": { "at": -0.02, "boot": [4.43, 22.88], "exit": "back", "exits": [[6.18, 21.38]] }, "lines": [[[26.71,22.92],[26.71,4.57]]], "outline": [[[1.31,0],[2.56,0],[3.56,0.56],[10.05,1.06],[10.41,1.4],[22.66,1.4],[24.11,1.86],[25.11,3.06],[25.66,4.4],[29.75,4.45],[30.9,5.36],[30.9,22.11],[29.75,23.05],[28.86,23.66],[27.61,23.66],[26.46,22.86],[0.16,22.86],[0,22.71],[0,4.61],[0.41,4.15],[0.41,0.81],[0.86,0.16]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dt-6", "name": "DT 6-way", "mirrored": true,
+        "pins": [
+          { "x": -4.56, "y": -4.45, "size": 3.5 }, { "x": -4.56, "y": 0, "size": 3.5 }, { "x": -4.56, "y": 4.45, "size": 3.5 },
+          { "x": 4.56, "y": 4.45, "size": 3.5 }, { "x": 4.56, "y": 0, "size": 3.5 }, { "x": 4.56, "y": -4.45, "size": 3.5 }
+        ],
+        "outline": { "type": "rect", "width": 18.6, "height": 18.7, "cornerRadius": 2.5 },
+        "features": [{ "y": -9.35, "layer": "behind", "shape": { "type": "rect", "width": 10, "height": 3 } }]
+      }
+    },
+    {
+      "id": "uNlTanW0ie2hqj4RVKaxr",
+      "partNumber": "DT04-2P",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DT series, 2-way Male Receptacle, size 16.",
+      "gender": "Male",
+      "color": "Gray",
+      "numberOfCavities": 2,
+      "url": "https://www.te.com/usa-en/product-DT04-2P.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/42P/DT04-2P-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/000/DT0/42P/DT04-2P-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dt04-2p",
+        "top": { "width": 43.36, "height": 17.11, "rear": { "at": -0.02, "boot": [2.33, 14.73], "exit": "back", "exits": [[2.33, 14.73]] }, "lines": [[[22.28,15.03],[22.28,2.13]],[[28.46,4.12],[28.46,12.98]]], "outline": [[[22.75,0],[41,0],[41.46,0.46],[41.46,3.11],[41.86,3.51],[42.9,3.51],[43.36,3.95],[43.36,13.16],[42.9,13.61],[41.86,13.61],[41.46,14.01],[41.46,16.66],[41,17.11],[22.75,17.11],[22.3,16.66],[22.3,15.21],[21.91,14.8],[0.36,14.8],[0,14.45],[0,2.65],[0.36,2.31],[21.91,2.31],[22.3,1.9],[22.3,0.46]]] },
+        "side": { "width": 43.36, "height": 17.5, "rear": { "at": -0.02, "boot": [5.23, 14.68], "exit": "back", "exits": [[5.23, 14.68]] }, "lines": [[[22.28,16.05],[22.28,4.98]]], "outline": [[[29.11,0],[42.71,0],[43.36,0.65],[43.36,3.2],[41.46,4.11],[41.46,16.5],[41,16.96],[4.31,16.96],[4.06,16.71],[4.06,15.11],[3.65,14.71],[0.11,14.71],[0,14.61],[0,5.51],[0.36,5.15],[21.91,5.15],[22.3,4.76],[22.3,3.76],[22.75,3.31],[28.11,3.31],[28.5,2.9],[28.5,0.61]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dt-2", "name": "DT 2-way",
+        "pins": [{ "x": -2.73, "y": 0, "size": 4.2 }, { "x": 2.73, "y": 0, "size": 4.2 }],
+        "outline": { "type": "rect", "width": 15.1, "height": 11.7, "cornerRadius": 2.5 },
+        "features": [{ "y": -5.85, "layer": "behind", "shape": { "type": "rect", "width": 8.5, "height": 3 } }]
+      }
+    },
+    {
+      "id": "4akzJN276k9xp8wuDBxal",
+      "partNumber": "DTP06-2S",
+      "manufacturer": "TE Connectivity DEUTSCH",
+      "description": "DEUTSCH DTP series, 2-way Female Plug, size 12.",
+      "gender": "Female",
+      "color": "Gray",
+      "numberOfCavities": 2,
+      "url": "https://www.te.com/usa-en/product-DTP06-2S-E003.html",
+      "image": {
+        "url": "https://www.te.com/content/dam/te-com/catalog/part/DTP/062/SE0/DTP06-2S-E003-t1.jpg/jcr:content/renditions/product-high-res.png",
+        "source": "url",
+        "lowResUrl": "https://www.te.com/content/dam/te-com/catalog/part/DTP/062/SE0/DTP06-2S-E003-t1.jpg/jcr:content/renditions/product-details.png"
+      },
+      "views": {
+        "id": "te-dtp06-2s-ce01",
+        "top": { "width": 36.36, "height": 21.96, "rear": { "at": -0.02, "boot": [-0.02, 22], "exit": "back", "exits": [[1.88, 20.08]] }, "lines": [[[4.81,4.25],[4.81,17.73]],[[35.76,3.19],[35.76,18.74]]], "outline": [[[1.56,0],[8.11,0],[8.16,1.71],[13.05,1.71],[13.41,3.11],[35.75,3.11],[36.36,3.45],[36.36,18.5],[35.75,18.86],[13.41,18.86],[13.05,19.21],[13.05,20.25],[8.16,20.25],[8.11,21.96],[1.4,21.96],[0,20.41],[0,1.31]]] },
+        "side": { "width": 36.36, "height": 18.41, "rear": { "at": -0.02, "boot": [3.83, 18.43], "exit": "back", "exits": [[5.78, 16.48]] }, "lines": [[[8.11,15.8],[8.11,6.46]],[[35.76,6.45],[35.76,17.89]]], "outline": [[[8.76,0],[14.01,0],[14.66,1.11],[26.11,1.11],[28.61,2.9],[28.71,5.11],[29.91,6.36],[35.81,6.36],[36.36,6.66],[36.36,17.66],[35.75,18],[10.36,18],[9.45,16.71],[8.05,16.75],[4.81,18.41],[1.56,18.41],[0,17.11],[0,5.4],[1.5,3.86],[5.11,3.9],[5.45,1.71],[8.11,1.11]]] }
+      },
+      "pinout": {
+        "id": "te-deutsch-dtp-2", "name": "DTP 2-way", "mirrored": true,
+        "pins": [{ "x": 3.35, "y": 0, "size": 5.3 }, { "x": -3.35, "y": 0, "size": 5.3 }],
+        "outline": { "type": "rect", "width": 16.4, "height": 12.1, "cornerRadius": 2.5 },
+        "features": [{ "y": -6.05, "layer": "behind", "shape": { "type": "rect", "width": 8, "height": 3 } }]
+      }
+    }
+  ];
 
-  function handleExcelUpload(event) {
+  let activePartsCatalog = [...BUILTIN_DEUTSCH_PARTS];
+  let rawExcelWorkbook = null;
+  let generatedHarnessObj = null;
+  let auditConnectorsList = [];
+  let auditWiresList = [];
+  let currentView = 'connectors';
+
+  window.onload = function() {
+    const savedLib = localStorage.getItem('loomtech_custom_parts_lib');
+    if (savedLib) {
+      try {
+        const parsed = JSON.parse(savedLib);
+        mergePartsIntoCatalog(parsed);
+        document.getElementById('libBadge').innerText = `${activePartsCatalog.length} Fichas en Librería`;
+        document.getElementById('libMsg').innerText = `Librería personalizada activa (${activePartsCatalog.length} fichas)`;
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  function mergePartsIntoCatalog(partsArray) {
+    if (!Array.isArray(partsArray)) return;
+    partsArray.forEach(p => {
+      if (!p || !p.partNumber) return;
+      const idx = activePartsCatalog.findIndex(existing => existing.partNumber.toUpperCase() === p.partNumber.toUpperCase());
+      if (idx !== -1) {
+        activePartsCatalog[idx] = p;
+      } else {
+        activePartsCatalog.push(p);
+      }
+    });
+  }
+
+  function handleLibraryFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const msg = document.getElementById('fileMsg');
-    msg.innerText = `Archivo cargado: ${file.name}`;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const json = JSON.parse(e.target.result);
+        const parts = json.connectorParts || (Array.isArray(json) ? json : []);
+        if (parts.length > 0) {
+          mergePartsIntoCatalog(parts);
+          localStorage.setItem('loomtech_custom_parts_lib', JSON.stringify(activePartsCatalog));
+          document.getElementById('libBadge').innerText = `${activePartsCatalog.length} Fichas Activas`;
+          document.getElementById('libMsg').innerText = `¡Librería actualizada! (${activePartsCatalog.length} modelos)`;
+          document.getElementById('libMsg').style.color = '#34d399';
+          if (rawExcelWorkbook) rebuildHarness();
+        } else {
+          alert("El archivo no contiene una lista 'connectorParts' válida.");
+        }
+      } catch (err) {
+        alert("Error al leer el archivo de librería.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function matchDeutschConnectorPart(rawConectorText, minPinsRequired) {
+    if (!rawConectorText) return null;
+    const text = String(rawConectorText).trim();
+    const upper = text.toUpperCase();
+
+    let series = null;
+    if (/\bDTM/.test(upper)) series = 'DTM';
+    else if (/\bDTP/.test(upper)) series = 'DTP';
+    else if (/\bDT/.test(upper)) series = 'DT';
+
+    if (!series) return null;
+
+    const defaultFemale = document.getElementById('chkDefaultFemale')?.checked ?? true;
+    let isMale = false;
+    if (/MACHO|MALE|RECEPTACLE|04-|\d+P\b/i.test(upper)) {
+      isMale = true;
+    } else if (/HEMBRA|FEMALE|PLUG|06-|\d+S\b/i.test(upper)) {
+      isMale = false;
+    } else {
+      isMale = !defaultFemale;
+    }
+
+    let ways = null;
+    const pnMatch = upper.match(/(?:DTM|DTP|DT)0[46]-(\d{1,2})[SP]/);
+    if (pnMatch) {
+      ways = parseInt(pnMatch[1], 10);
+    } else {
+      const numMatch = upper.match(/\b(2|3|4|6|8|12)\b/);
+      if (numMatch) ways = parseInt(numMatch[1], 10);
+    }
+
+    if (!ways && minPinsRequired >= 2) ways = minPinsRequired;
+    if (!ways) return null;
+
+    const targetPrefix = `${series}${isMale ? '04' : '06'}-${ways}${isMale ? 'P' : 'S'}`;
+
+    let found = activePartsCatalog.find(p =>
+      p.partNumber && p.partNumber.toUpperCase().startsWith(targetPrefix)
+    );
+
+    if (!found) {
+      found = activePartsCatalog.find(p =>
+        p.partNumber &&
+        p.partNumber.toUpperCase().startsWith(series) &&
+        p.numberOfCavities === ways &&
+        (isMale ? p.gender === 'Male' : p.gender === 'Female')
+      );
+    }
+
+    return found || null;
+  }
+
+  const CONNECTOR_ALIASES = {
+    'link': 'Link Firewall Engine',
+    'link firewall': 'Link Firewall Engine',
+    'link firewall engine': 'Link Firewall Engine',
+    'inyector 1': 'INJ 1', 'inj 1': 'INJ 1',
+    'inyector 2': 'INJ 2', 'inj 2': 'INJ 2',
+    'inyector 3': 'INJ 3', 'inj 3': 'INJ 3',
+    'inyector 4': 'INJ 4', 'inj 4': 'INJ 4',
+    'tps': 'Throttle Body', 'throttle body': 'Throttle Body',
+    'variador leva': 'VVT', 'vvt': 'VVT',
+    'presion nafta': 'Fuel Press', 'fuel press': 'Fuel Press',
+    'water press': 'Water Press', 'water pres': 'Water Press',
+    'arranque': 'Starter', 'starter': 'Starter',
+    'temp aceite': 'Oil Temp', 'oil temp': 'Oil Temp',
+    'wate gate': 'Waste Gate', 'waste gate': 'Waste Gate', 'wastegate': 'Waste Gate',
+    'mapt': 'MAPT', 'map': 'MAP',
+    'bomba hi press': 'HP-Fuel Pump', 'hp fuel pump': 'HP-Fuel Pump', 'hp-fuel pump': 'HP-Fuel Pump',
+    'hp fuel sensor': 'HP-Fuel Sensor', 'hp-fuel sensor': 'HP-Fuel Sensor', 'hp-fuel s': 'HP-Fuel Sensor',
+    'eng speed': 'Engine Speed', 'engine speed': 'Engine Speed',
+    'knok': 'Knock', 'knock': 'Knock',
+    'ambient press': 'Ambient Press Temp', 'ambient press temp': 'Ambient Press Temp',
+    'inlet cam sensor': 'Inlet Cam Sensor',
+    'exhaust temp': 'Exhaust Temp', 'exh temp': 'Exhaust Temp',
+    'oil press': 'Oil Press',
+    'water temp': 'Water Temp',
+    'lambda': 'Lambda',
+    'coil 1': 'Coil 1', 'coil 2': 'Coil 2', 'coil 3': 'Coil 3', 'coil 4': 'Coil 4',
+    'union 0v 1': 'Union 0v 1', 'union 0 vol 1': 'Union 0v 1', 'union 0 vol': 'Union 0v 1',
+    'union 0v 2': 'Union 0v 2',
+    'union 5v 1': 'Union 5v 1', 'union 5 vol 1': 'Union 5v 1', 'union 5 vol': 'Union 5v 1',
+    'union 5v 2': 'Union 5v 2', 'union 5 vol 2': 'Union 5v 2'
+  };
+
+  const COLOR_TRANSLATION = {
+    'blanco': 'White', 'white': 'White',
+    'negro': 'Black', 'black': 'Black',
+    'rojo': 'Red', 'red': 'Red',
+    'verde': 'Green', 'green': 'Green',
+    'azul': 'Blue', 'blue': 'Blue',
+    'amarillo': 'Yellow', 'yellow': 'Yellow',
+    'naranja': 'Orange', 'orange': 'Orange',
+    'marron': 'Brown', 'marrón': 'Brown', 'brown': 'Brown',
+    'gris': 'Gray', 'grey': 'Gray', 'gray': 'Gray',
+    'violeta': 'Purple', 'purpura': 'Purple', 'purple': 'Purple',
+    'rosa': 'Pink', 'pink': 'Pink'
+  };
+
+  const usedIds = new Set();
+  function genId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    let id = '';
+    do {
+      id = '';
+      for (let i = 0; i < 6; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+    } while (usedIds.has(id));
+    usedIds.add(id);
+    return id;
+  }
+
+  function normalizeConnectorName(rawName) {
+    if (!rawName) return '';
+    let clean = String(rawName).trim();
+    if (clean.includes('/')) clean = clean.split('/')[0].trim();
+    const key = clean.toLowerCase();
+    return CONNECTOR_ALIASES[key] || clean;
+  }
+
+  function translateWireColor(rawColor) {
+    if (!rawColor) return { color: 'White' };
+    const clean = String(rawColor).replace(/[■□▪▫]/g, '').trim();
+    const parts = clean.split(/[\/\-]/).map(p => p.trim().toLowerCase()).filter(Boolean);
+    if (parts.length === 0) return { color: 'White' };
+
+    const mainColor = COLOR_TRANSLATION[parts[0]] || 'White';
+    const res = { color: mainColor };
+    if (parts.length > 1 && COLOR_TRANSLATION[parts[1]]) {
+      res.stripeColor = COLOR_TRANSLATION[parts[1]];
+    }
+    return res;
+  }
+
+  function parseLengthToMm(rawVal, unitMode) {
+    if (rawVal === null || rawVal === undefined || String(rawVal).trim() === '') return null;
+    const cleaned = String(rawVal).replace(',', '.').replace(/[^0-9.]/g, '');
+    const num = parseFloat(cleaned);
+    if (isNaN(num) || num <= 0) return null;
+    return unitMode === 'cm' ? Math.round(num * 10) : Math.round(num);
+  }
+
+  function handleExcelFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const msg = document.getElementById('excelMsg');
+    msg.innerText = `Excel cargado: ${file.name}`;
     msg.style.color = '#34d399';
 
-    const baseName = file.name.replace(/\.xlsx?$/i, '').replace(/\s*-\s*Wiring Table$/i, '');
-    document.getElementById('outFileName').value = `${baseName} - Unificado`;
+    const baseName = file.name.replace(/\.xlsx?$/i, '').replace(/\s+/g, '.');
+    document.getElementById('outHarnessName').value = `${baseName}.harness`;
 
     const reader = new FileReader();
     reader.onload = function(e) {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      parseWorkbook(workbook);
+      rawExcelWorkbook = XLSX.read(data, { type: 'array' });
+      rebuildHarness();
     };
     reader.readAsArrayBuffer(file);
   }
 
-  function parseWorkbook(workbook) {
-    const sheetNames = workbook.SheetNames;
-    if (sheetNames.length === 0) return;
+  // =========================================================================
+  // MOTOR PRINCIPAL: CONECTORES LIBRES DISTRIBUIDOS HORIZONTALMENTE POR LARGO
+  // =========================================================================
+  function rebuildHarness() {
+    if (!rawExcelWorkbook) return;
 
-    // Hoja 1: Todos los cables ("All")
-    const firstSheetName = sheetNames[0];
-    const allWiresRaw = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
+    usedIds.clear();
+    const includeUnions = document.getElementById('chkIncludeUnions').checked;
+    const showPartImages = document.getElementById('chkShowPartImages').checked;
+    const unitMode = document.getElementById('lengthUnitSelect').value; // 'cm' o 'mm'
+    const scaleX = parseFloat(document.getElementById('scaleXSelect').value) || 1;
 
-    // Hojas 2 en adelante: Conectores individuales
-    const connectors = [];
-    let totalPinsCount = 0;
+    const connectorsMap = new Map();
+    const rawConnections = [];
 
-    for (let i = 1; i < sheetNames.length; i++) {
-      const sName = sheetNames[i];
-      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sName], { defval: '' });
-      totalPinsCount += rows.length;
+    function getOrCreateConnector(rawName, rawType) {
+      const normName = normalizeConnectorName(rawName);
+      if (!normName || normName === '-') return null;
+      const isUnion = normName.toLowerCase().startsWith('union');
+      if (isUnion && !includeUnions) return null;
 
-      const connectedPins = rows.filter(r => {
-        return String(r['Destination'] || '').trim() !== '' || String(r['ID'] || '').trim() !== '';
-      }).length;
-
-      connectors.push({
-        name: sName,
-        rows: rows,
-        connectedCount: connectedPins,
-        totalPins: rows.length
-      });
+      if (!connectorsMap.has(normName)) {
+        connectorsMap.set(normName, {
+          label: normName,
+          isUnion: isUnion,
+          connectorType: rawType || '',
+          pinsOrder: [],
+          pinToCavId: new Map(),
+          lengthsMm: []
+        });
+      } else if (rawType && !connectorsMap.get(normName).connectorType) {
+        connectorsMap.get(normName).connectorType = rawType;
+      }
+      return connectorsMap.get(normName);
     }
 
-    parsedWorkbookData = {
-      firstSheetName: firstSheetName,
-      allWires: allWiresRaw,
-      connectors: connectors
-    };
-
-    // Actualizar contadores
-    document.getElementById('statsBar').style.display = 'grid';
-    document.getElementById('statWires').innerText = allWiresRaw.length;
-    document.getElementById('statConnectors').innerText = connectors.length;
-    document.getElementById('statPins').innerText = totalPinsCount;
-
-    document.getElementById('btnDownloadExcel').disabled = false;
-
-    renderPreview();
-  }
-
-  function isCellFilled(val) {
-    return val !== null && val !== undefined && String(val).trim() !== '';
-  }
-
-  function cleanCellVal(val, colName, cleanSquares) {
-    if (val === null || val === undefined) return '';
-    let str = String(val);
-    if (cleanSquares && colName.toLowerCase().includes('color')) {
-      return str.replace(/[■□▪▫]/g, '').trim();
-    }
-    return val;
-  }
-
-  // Construye las matrices 2D (Array of Arrays) tanto para la vista previa como para la exportación Excel
-  function buildSheetsMatrices() {
-    if (!parsedWorkbookData) return null;
-
-    const layoutMode = document.getElementById('layoutModeSelect').value; // 'blocks' o 'column'
-    const removeEmptyCols = document.getElementById('chkRemoveEmptyCols').checked;
-    const hideEmptyConnectors = document.getElementById('chkHideEmptyConnectors').checked;
-    const hideEmptyPins = document.getElementById('chkHideEmptyPins').checked;
-    const cleanSquares = document.getElementById('chkCleanColorSquares').checked;
-
-    // --- 1. MATRIZ DE HOJA 1 (ALL) ---
-    const allRows = parsedWorkbookData.allWires;
-    let allHeaders = allRows.length > 0 ? Object.keys(allRows[0]) : ['ID', 'Color', 'Part Number', 'Gauge', 'From', 'To', 'Length (mm)'];
-    
-    if (removeEmptyCols && allRows.length > 0) {
-      allHeaders = allHeaders.filter(h => allRows.some(r => isCellFilled(r[h])));
+    function registerPin(connObj, pinLabel) {
+      if (!connObj) return null;
+      const cleanPin = String(pinLabel || '').trim();
+      if (!cleanPin || cleanPin === '-') return null;
+      if (!connObj.pinToCavId.has(cleanPin)) {
+        connObj.pinsOrder.push(cleanPin);
+        connObj.pinToCavId.set(cleanPin, genId());
+      }
+      return cleanPin;
     }
 
-    const sheet1AOA = [allHeaders];
-    allRows.forEach(r => {
-      sheet1AOA.push(allHeaders.map(h => cleanCellVal(r[h], h, cleanSquares)));
+    // 1. Recorrer todas las hojas del Excel
+    rawExcelWorkbook.SheetNames.forEach(sheetName => {
+      const sheet = rawExcelWorkbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      let currentConn = null;
+      let colIdx = { nombre: 1, conector: 2, pinOrig: 3, desc: 4, awg: 5, color: 6, largo: 7, destName: 8, pinDest: 9, asig: 10 };
+      let autoPinCounter = 1;
+
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || row.every(cell => String(cell).trim() === '')) continue;
+
+        const nombreHeaderIdx = row.findIndex(c => String(c).trim().toLowerCase() === 'nombre');
+        if (nombreHeaderIdx !== -1) {
+          colIdx.nombre = nombreHeaderIdx;
+          colIdx.conector = nombreHeaderIdx + 1;
+          colIdx.pinOrig = nombreHeaderIdx + 2;
+          colIdx.desc = nombreHeaderIdx + 3;
+          colIdx.awg = nombreHeaderIdx + 4;
+          colIdx.color = nombreHeaderIdx + 5;
+          colIdx.largo = nombreHeaderIdx + 6;
+          colIdx.destName = nombreHeaderIdx + 7;
+          colIdx.pinDest = nombreHeaderIdx + 8;
+          colIdx.asig = nombreHeaderIdx + 9;
+          currentConn = null;
+          autoPinCounter = 1;
+          continue;
+        }
+
+        const cellNombre = String(row[colIdx.nombre] || '').trim();
+        const cellConector = String(row[colIdx.conector] || '').trim();
+        let cellPinOrig = String(row[colIdx.pinOrig] || '').trim();
+        const cellDesc = String(row[colIdx.desc] || '').trim();
+        const cellAwg = String(row[colIdx.awg] || '').trim();
+        const cellColor = String(row[colIdx.color] || '').trim();
+        const cellLargoRaw = row[colIdx.largo];
+        const cellDestRaw = String(row[colIdx.destName] || '').trim();
+        let cellPinDest = String(row[colIdx.pinDest] || '').trim();
+
+        if (cellNombre !== '') {
+          currentConn = getOrCreateConnector(cellNombre, cellConector);
+          autoPinCounter = 1;
+        }
+
+        if (!currentConn) continue;
+
+        const parsedMm = parseLengthToMm(cellLargoRaw, unitMode);
+        if (parsedMm) {
+          currentConn.lengthsMm.push(parsedMm);
+        }
+
+        if ((!cellPinOrig || cellPinOrig === '-') && (cellDesc || cellDestRaw)) {
+          cellPinOrig = String(autoPinCounter);
+        }
+        autoPinCounter++;
+
+        if (cellPinOrig && cellPinOrig !== '-') {
+          registerPin(currentConn, cellPinOrig);
+        }
+
+        if (cellDestRaw && cellDestRaw !== '-') {
+          if (cellPinDest.includes('/')) {
+            const parts = cellPinDest.split('/').map(s => s.trim()).filter(s => s !== '-');
+            cellPinDest = parts[0] || '';
+          }
+
+          const targetConn = getOrCreateConnector(cellDestRaw, '');
+          if (targetConn) {
+            // Si el largo estaba escrito en la fila de Link Firewall hacia el sensor, se lo asignamos al sensor
+            if (parsedMm) targetConn.lengthsMm.push(parsedMm);
+            if (cellPinDest && cellPinDest !== '-') {
+              registerPin(targetConn, cellPinDest);
+            }
+            rawConnections.push({
+              fromConn: currentConn.label,
+              fromPin: cellPinOrig,
+              toConn: targetConn.label,
+              toPin: (cellPinDest && cellPinDest !== '-') ? cellPinDest : '',
+              desc: cellDesc,
+              awg: cellAwg,
+              colorRaw: cellColor,
+              lengthMm: parsedMm
+            });
+          }
+        }
+      }
     });
 
-    // --- 2. MATRIZ DE HOJA 2 (PINOUT UNIFICADO) ---
-    let connectorsList = parsedWorkbookData.connectors;
-    if (hideEmptyConnectors) {
-      connectorsList = connectorsList.filter(c => c.connectedCount > 0);
-    }
+    // 2. Conciliar cables de ida y vuelta
+    const finalWires = [];
+    const consumedIndices = new Set();
 
-    let pinHeaders = ['Cavity', 'Destination', 'ID', 'Color', 'Part Number', 'Gauge', 'Twisted With', 'Ident', 'Net', 'Length (mm)', 'Contact', 'Seal'];
-    const sampleConn = parsedWorkbookData.connectors.find(c => c.rows.length > 0);
-    if (sampleConn) {
-      pinHeaders = Object.keys(sampleConn.rows[0]);
-    }
+    rawConnections.forEach((connA, idxA) => {
+      if (consumedIndices.has(idxA)) return;
 
-    if (removeEmptyCols) {
-      pinHeaders = pinHeaders.filter(h => {
-        if (h === 'Cavity' || h === 'Destination' || h === 'ID' || h === 'Color') return true;
-        return connectorsList.some(c => c.rows.some(r => isCellFilled(r[h])));
-      });
-    }
+      let matchIdx = -1;
+      for (let idxB = idxA + 1; idxB < rawConnections.length; idxB++) {
+        if (consumedIndices.has(idxB)) continue;
+        const connB = rawConnections[idxB];
 
-    const sheet2AOA = [];
-    const sheet2RowMeta = []; // Guarda el tipo de fila para pintarla bien en la vista previa
-
-    if (layoutMode === 'blocks') {
-      // MODO 1: Un bloque debajo del otro (Fila con nombre del Conector -> Encabezados -> Pines -> Fila en blanco)
-      connectorsList.forEach((conn, idx) => {
-        let rowsToUse = conn.rows;
-        if (hideEmptyPins) {
-          rowsToUse = rowsToUse.filter(r => isCellFilled(r['Destination']) || isCellFilled(r['ID']));
+        if (connA.fromConn === connB.toConn && connA.toConn === connB.fromConn) {
+          const pinAMatchesB = (!connA.toPin || !connB.fromPin || connA.toPin === connB.fromPin);
+          const pinBMatchesA = (!connB.toPin || !connA.fromPin || connB.toPin === connA.fromPin);
+          if (pinAMatchesB && pinBMatchesA) {
+            matchIdx = idxB;
+            break;
+          }
         }
+      }
 
-        // Fila título del conector
-        const bannerRow = [`CONECTOR: ${conn.name}`, ...pinHeaders.slice(1).map(() => '')];
-        sheet2AOA.push(bannerRow);
-        sheet2RowMeta.push('banner');
+      if (matchIdx !== -1) {
+        const connB = rawConnections[matchIdx];
+        consumedIndices.add(idxA);
+        consumedIndices.add(matchIdx);
 
-        // Fila encabezados de columna
-        sheet2AOA.push(pinHeaders);
-        sheet2RowMeta.push('subheader');
+        const resolvedFromPin = connA.fromPin || connB.toPin;
+        const resolvedToPin = connA.toPin || connB.fromPin;
+        const chosenColor = (connA.colorRaw && connA.colorRaw.toLowerCase() !== 'blanco') ? connA.colorRaw : (connB.colorRaw || connA.colorRaw);
 
-        // Filas de cada pin
-        rowsToUse.forEach(r => {
-          const hasWire = isCellFilled(r['Destination']) || isCellFilled(r['ID']);
-          sheet2AOA.push(pinHeaders.map(h => cleanCellVal(r[h], h, cleanSquares)));
-          sheet2RowMeta.push(hasWire ? 'data' : 'empty-pin');
+        finalWires.push({
+          fromConn: connA.fromConn,
+          fromPin: resolvedFromPin,
+          toConn: connA.toConn,
+          toPin: resolvedToPin,
+          desc: connA.desc || connB.desc,
+          awg: connA.awg || connB.awg,
+          colorRaw: chosenColor,
+          lengthMm: connA.lengthMm || connB.lengthMm,
+          status: 'Conciliado (Ida y Vuelta)'
         });
+      }
+    });
 
-        // Fila en blanco de separación entre conectores
-        if (idx < connectorsList.length - 1) {
-          sheet2AOA.push(pinHeaders.map(() => ''));
-          sheet2RowMeta.push('blank');
-        }
+    rawConnections.forEach((conn, idx) => {
+      if (consumedIndices.has(idx)) return;
+
+      const alreadyUsedOrigin = finalWires.some(w =>
+        (w.fromConn === conn.fromConn && w.fromPin === conn.fromPin) ||
+        (w.toConn === conn.fromConn && w.toPin === conn.fromPin)
+      );
+      if (alreadyUsedOrigin && !conn.fromConn.toLowerCase().startsWith('union')) return;
+
+      finalWires.push({
+        fromConn: conn.fromConn,
+        fromPin: conn.fromPin,
+        toConn: conn.toConn,
+        toPin: conn.toPin,
+        desc: conn.desc,
+        awg: conn.awg,
+        colorRaw: conn.colorRaw,
+        lengthMm: conn.lengthMm,
+        status: conn.toPin ? 'Directo Completo' : 'Pin Auto-Asignado'
       });
-    } else {
-      // MODO 2: Tabla continua con columna "Connector" al principio + fila en blanco entre cada conector
-      const unifiedHeaders = ['Connector', ...pinHeaders];
-      sheet2AOA.push(unifiedHeaders);
-      sheet2RowMeta.push('subheader');
+    });
 
-      connectorsList.forEach((conn, idx) => {
-        let rowsToUse = conn.rows;
-        if (hideEmptyPins) {
-          rowsToUse = rowsToUse.filter(r => isCellFilled(r['Destination']) || isCellFilled(r['ID']));
-        }
+    finalWires.forEach(w => {
+      const targetObj = connectorsMap.get(w.toConn);
+      const sourceObj = connectorsMap.get(w.fromConn);
+      if (!targetObj || !sourceObj) return;
 
-        rowsToUse.forEach(r => {
-          const hasWire = isCellFilled(r['Destination']) || isCellFilled(r['ID']);
-          sheet2AOA.push([conn.name, ...pinHeaders.map(h => cleanCellVal(r[h], h, cleanSquares))]);
-          sheet2RowMeta.push(hasWire ? 'data' : 'empty-pin');
-        });
+      if (!w.fromPin) w.fromPin = String(sourceObj.pinsOrder.length + 1);
+      registerPin(sourceObj, w.fromPin);
 
-        // Fila en blanco de separación
-        if (idx < connectorsList.length - 1) {
-          sheet2AOA.push(unifiedHeaders.map(() => ''));
-          sheet2RowMeta.push('blank');
-        }
+      if (!w.toPin) w.toPin = String(targetObj.pinsOrder.length + 1);
+      registerPin(targetObj, w.toPin);
+    });
+
+    // 3. Asignar fichas Deutsch y calcular la distancia desde el conector principal
+    const usedPartsMap = new Map();
+    const allConnectorsArray = Array.from(connectorsMap.values());
+
+    // El conector con más pines es la ficha principal (ej: Link Firewall Engine)
+    let mainHubConn = allConnectorsArray[0];
+    allConnectorsArray.forEach(c => {
+      if (c.pinsOrder.length > (mainHubConn?.pinsOrder.length || 0)) {
+        mainHubConn = c;
+      }
+    });
+
+    allConnectorsArray.forEach(connData => {
+      connData.pinsOrder.sort((a, b) => {
+        const numA = parseInt(a, 10), numB = parseInt(b, 10);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        if (a.length !== b.length) return a.length - b.length;
+        return a.localeCompare(b);
       });
+
+      const matchedPart = matchDeutschConnectorPart(connData.connectorType, connData.pinsOrder.length);
+      if (matchedPart) {
+        connData.matchedPart = matchedPart;
+        usedPartsMap.set(matchedPart.id, matchedPart);
+
+        while (connData.pinsOrder.length < matchedPart.numberOfCavities) {
+          const extraPinName = String(connData.pinsOrder.length + 1);
+          if (!connData.pinToCavId.has(extraPinName)) {
+            connData.pinsOrder.push(extraPinName);
+            connData.pinToCavId.set(extraPinName, genId());
+          } else {
+            const fallbackName = `libre_${connData.pinsOrder.length + 1}`;
+            connData.pinsOrder.push(fallbackName);
+            connData.pinToCavId.set(fallbackName, genId());
+          }
+        }
+      }
+
+      connData.harnessId = genId();
+
+      // Distancia desde la ficha principal (si hay largos cargados para este conector)
+      if (connData === mainHubConn) {
+        connData.distanceFromMainMm = 0;
+        connData.hasExplicitLength = true;
+      } else if (connData.lengthsMm.length > 0) {
+        // Promedio redondeado de los largos declarados en los pines de este conector
+        const sum = connData.lengthsMm.reduce((a, b) => a + b, 0);
+        connData.distanceFromMainMm = Math.round(sum / connData.lengthsMm.length);
+        connData.hasExplicitLength = true;
+      } else {
+        connData.distanceFromMainMm = null;
+        connData.hasExplicitLength = false;
+      }
+    });
+
+    // 4. DISTRIBUCIÓN HORIZONTAL SEGÚN EL LARGO (Sin ramales/bundles forzados)
+    // - Ficha principal fija a la izquierda en X = 150, Y = 240
+    // - Conectores con Largo cargado: X = 150 + (distanciaMm * scaleX)
+    // - Conectores sin Largo cargado aún: se distribuyen en columnas ordenadas a partir de X = 450
+    const finalHarnessConnectors = [];
+    const MAIN_X = 150;
+    const MAIN_Y = 240;
+
+    if (mainHubConn) {
+      mainHubConn.posX = MAIN_X;
+      mainHubConn.posY = MAIN_Y;
+      const mainCavities = mainHubConn.pinsOrder.map(p => ({ id: mainHubConn.pinToCavId.get(p) }));
+      const mainJson = {
+        id: mainHubConn.harnessId,
+        label: mainHubConn.label,
+        cavities: mainCavities,
+        schematicPosition: { x: MAIN_X, y: MAIN_Y },
+        layoutPosition: { x: MAIN_X, y: MAIN_Y }
+      };
+      if (mainHubConn.matchedPart) {
+        mainJson.partId = mainHubConn.matchedPart.id;
+        if (showPartImages) {
+          mainJson.partImage = { schematic: { size: 140, position: { x: MAIN_X, y: MAIN_Y - 150 } } };
+          mainJson.pinout = { schematic: { width: 90, height: 90, position: { x: MAIN_X, y: MAIN_Y + 120 } } };
+        }
+      }
+      finalHarnessConnectors.push(mainJson);
     }
 
-    return {
-      sheet1AOA,
-      sheet2AOA,
-      sheet2RowMeta,
-      colCountSheet1: allHeaders.length,
-      colCountSheet2: layoutMode === 'blocks' ? pinHeaders.length : (pinHeaders.length + 1)
+    const peripheralConnectors = allConnectorsArray.filter(c => c !== mainHubConn);
+
+    // Ordenar periféricos de menor a mayor distancia (los que no tienen largo van después ordenados por nombre)
+    peripheralConnectors.sort((a, b) => {
+      if (a.hasExplicitLength && b.hasExplicitLength) return a.distanceFromMainMm - b.distanceFromMainMm;
+      if (a.hasExplicitLength) return -1;
+      if (b.hasExplicitLength) return 1;
+      return 0;
+    });
+
+    // Agrupar por franjas verticales (buckets de X) para que si dos conectores tienen el mismo largo no se pisen en Y
+    const xBuckets = new Map(); // xCoordRedondeada -> cantidad de conectores en esa columna
+    let fallbackIndex = 0;
+
+    peripheralConnectors.forEach(connData => {
+      let targetX;
+      if (connData.hasExplicitLength) {
+        // Redondear a múltiplos de 30px (grilla nativa de Harness Design)
+        const rawX = MAIN_X + Math.max(240, Math.round(connData.distanceFromMainMm * scaleX));
+        targetX = Math.round(rawX / 60) * 60;
+      } else {
+        // Si aún no tiene largo en el Excel, organizarlos en columnas limpias hacia la derecha según su orden
+        const col = Math.floor(fallbackIndex / 5);
+        targetX = 480 + col * 240;
+        fallbackIndex++;
+      }
+
+      const countInCol = xBuckets.get(targetX) || 0;
+      xBuckets.set(targetX, countInCol + 1);
+
+      // Escalonar verticalmente alrededor de Y = 240 (ej: 60, 210, 360, 510, -90...)
+      const yOffsets = [-180, -30, 120, 270, 420, -330, 570];
+      const targetY = MAIN_Y + (yOffsets[countInCol % yOffsets.length] + Math.floor(countInCol / yOffsets.length) * 60);
+
+      connData.posX = targetX;
+      connData.posY = targetY;
+
+      const cavities = connData.pinsOrder.map(p => ({ id: connData.pinToCavId.get(p) }));
+      const connJson = {
+        id: connData.harnessId,
+        label: connData.label,
+        cavities: cavities,
+        schematicPosition: { x: targetX, y: targetY },
+        layoutPosition: { x: targetX, y: targetY }
+      };
+
+      if (connData.matchedPart) {
+        connJson.partId = connData.matchedPart.id;
+        if (showPartImages) {
+          connJson.partImage = {
+            schematic: {
+              size: 120,
+              position: { x: targetX, y: targetY - 120 }
+            }
+          };
+          connJson.pinout = {
+            schematic: {
+              width: 80,
+              height: 80,
+              position: { x: targetX, y: targetY + 90 }
+            }
+          };
+        }
+      }
+
+      finalHarnessConnectors.push(connJson);
+    });
+
+    // 5. Construir la lista de Cables (wires)
+    const harnessWires = [];
+    auditWiresList = [];
+
+    finalWires.forEach(w => {
+      const srcConn = connectorsMap.get(w.fromConn);
+      const tgtConn = connectorsMap.get(w.toConn);
+      if (!srcConn || !tgtConn) return;
+
+      const srcCavId = srcConn.pinToCavId.get(w.fromPin);
+      const tgtCavId = tgtConn.pinToCavId.get(w.toPin);
+      if (!srcCavId || !tgtCavId) return;
+
+      const colorObj = translateWireColor(w.colorRaw);
+      const wireId = genId();
+
+      const wireJson = {
+        id: wireId,
+        source: { id: srcConn.harnessId, handle: srcCavId },
+        target: { id: tgtConn.harnessId, handle: tgtCavId },
+        color: colorObj.color
+      };
+      if (colorObj.stripeColor) wireJson.stripeColor = colorObj.stripeColor;
+
+      harnessWires.push(wireJson);
+      auditWiresList.push({
+        id: wireId,
+        fromConn: srcConn.label,
+        fromPin: w.fromPin,
+        toConn: tgtConn.label,
+        toPin: w.toPin,
+        desc: w.desc,
+        awg: w.awg,
+        color: colorObj.stripeColor ? `${colorObj.color}/${colorObj.stripeColor}` : colorObj.color,
+        status: w.status
+      });
+    });
+
+    // 6. Armar el JSON .harness final (conectores sueltos sin bundles forzados)
+    generatedHarnessObj = {
+      "$schema": "https://docs.harness.design/files/harness/schema/v1.2.json",
+      "$docs": "https://docs.harness.design/files/harness/editing-guide.md",
+      "version": 1.2,
+      "lengthUnit": "mm",
+      "wires": harnessWires,
+      "connectors": finalHarnessConnectors,
+      "bundles": [],
+      "branchPoints": [],
+      "connectorParts": Array.from(usedPartsMap.values())
     };
+
+    auditConnectorsList = [mainHubConn, ...peripheralConnectors].filter(Boolean);
+
+    const splicesCount = auditConnectorsList.filter(c => c.isUnion).length;
+    document.getElementById('statsBar').style.display = 'grid';
+    document.getElementById('statConnectors').innerText = auditConnectorsList.length - splicesCount;
+    document.getElementById('statWires').innerText = harnessWires.length;
+    document.getElementById('statSplices').innerText = splicesCount;
+
+    document.getElementById('badgeConnectors').innerText = auditConnectorsList.length;
+    document.getElementById('badgeWires').innerText = harnessWires.length;
+    document.getElementById('btnDownloadHarness').disabled = false;
+
+    renderActiveView();
   }
 
-  function switchTab(tab) {
-    currentActiveTab = tab;
-    document.getElementById('tabBtnPinout').classList.toggle('active', tab === 'pinout');
-    document.getElementById('tabBtnAll').classList.toggle('active', tab === 'all');
-    renderPreview();
+  function switchView(view) {
+    currentView = view;
+    document.getElementById('tabConnectors').classList.toggle('active', view === 'connectors');
+    document.getElementById('tabWires').classList.toggle('active', view === 'wires');
+    document.getElementById('tabJson').classList.toggle('active', view === 'json');
+    renderActiveView();
   }
 
-  function renderPreview() {
-    if (!parsedWorkbookData) return;
+  function renderActiveView() {
+    if (!generatedHarnessObj) return;
+    const container = document.getElementById('viewContainer');
 
-    const matrices = buildSheetsMatrices();
-    if (!matrices) return;
+    if (currentView === 'connectors') {
+      let html = `
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Componente</th>
+              <th>Declarado en Excel</th>
+              <th>Ficha Asignada + Vista Previa</th>
+              <th>Vías</th>
+              <th>Distancia desde Principal</th>
+              <th>Posición Layout (X, Y)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
 
-    document.getElementById('badgeAllRows').innerText = `${matrices.sheet1AOA.length} filas`;
-    document.getElementById('badgePinoutRows').innerText = `${matrices.sheet2AOA.length} filas`;
+      auditConnectorsList.forEach((c, idx) => {
+        let partCell = `<span style="color:#64748b;">Genérico</span>`;
+        if (c.isUnion) {
+          partCell = `<span class="badge-splice">Nodo de Unión / Empalme</span>`;
+        } else if (c.matchedPart) {
+          const imgUrl = c.matchedPart.image?.lowResUrl || c.matchedPart.image?.url || '';
+          const imgHtml = imgUrl ? `<img src="${imgUrl}" class="conn-thumb" alt="${c.matchedPart.partNumber}" onerror="this.style.display='none'">` : '';
+          partCell = `${imgHtml}<span class="badge-part">${c.matchedPart.partNumber} (${c.matchedPart.gender === 'Female' ? 'Hembra' : 'Macho'})</span>`;
+        }
 
-    const container = document.getElementById('previewContainer');
+        let distBadge = '';
+        if (idx === 0) {
+          distBadge = `<span class="badge-ok">0 mm (Ficha Principal / Origen)</span>`;
+        } else if (c.hasExplicitLength) {
+          distBadge = `<span class="badge-ok">${c.distanceFromMainMm} mm (${(c.distanceFromMainMm / 10).toFixed(1)} cm)</span>`;
+        } else {
+          distBadge = `<span style="color:#64748b;">Sin largo cargado (Auto-grilla)</span>`;
+        }
 
-    if (currentActiveTab === 'all') {
-      // Renderizar Hoja 1 (All)
-      const aoa = matrices.sheet1AOA;
-      if (aoa.length === 0) {
-        container.innerHTML = `<div class="empty-state">La Hoja 1 está vacía.</div>`;
-        return;
-      }
+        html += `
+          <tr>
+            <td><strong style="color:#fff;">${c.label}</strong></td>
+            <td style="color:#cbd5e1;">${c.connectorType || '-'}</td>
+            <td>${partCell}</td>
+            <td style="font-weight:700; color:#34d399;">${c.pinsOrder.length}</td>
+            <td>${distBadge}</td>
+            <td style="font-family:monospace; color:#94a3b8;">X: <strong style="color:#fff;">${c.posX}</strong> | Y: ${c.posY}</td>
+          </tr>
+        `;
+      });
 
-      const headers = aoa[0];
-      const bodyRows = aoa.slice(1);
+      html += `</tbody></table>`;
+      container.innerHTML = html;
 
-      let html = `<table class="sheet-table"><thead><tr><th class="row-num">#</th>`;
-      headers.forEach(h => { html += `<th>${h}</th>`; });
-      html += `</tr></thead><tbody>`;
+    } else if (currentView === 'wires') {
+      let html = `
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Origen (Conector . Pin)</th>
+              <th>Destino (Conector . Pin)</th>
+              <th>Señal / Descripción</th>
+              <th>AWG</th>
+              <th>Color CAD</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
 
-      bodyRows.forEach((row, rIdx) => {
-        html += `<tr><td class="row-num">${rIdx + 2}</td>`;
-        row.forEach(cell => {
-          html += `<td>${cell !== '' && cell !== null && cell !== undefined ? cell : ''}</td>`;
-        });
-        html += `</tr>`;
+      auditWiresList.forEach((w, idx) => {
+        const badgeClass = w.status.includes('Conciliado') ? 'badge-ok' : (w.status.includes('Auto') ? 'badge-warn' : 'badge-ok');
+        html += `
+          <tr>
+            <td style="color:#64748b; font-family:monospace;">W${idx + 1}</td>
+            <td><strong style="color:#fff;">${w.fromConn}</strong> <span style="color:#38bdf8; font-weight:700;">[Pin ${w.fromPin}]</span></td>
+            <td><strong style="color:#fff;">${w.toConn}</strong> <span style="color:#34d399; font-weight:700;">[Pin ${w.toPin}]</span></td>
+            <td style="color:#cbd5e1;">${w.desc || '-'}</td>
+            <td style="font-family:monospace; color:#94a3b8;">${w.awg || '-'}</td>
+            <td><strong>${w.color}</strong></td>
+            <td><span class="${badgeClass}">${w.status}</span></td>
+          </tr>
+        `;
       });
 
       html += `</tbody></table>`;
       container.innerHTML = html;
 
     } else {
-      // Renderizar Hoja 2 (Pinout Unificado)
-      const aoa = matrices.sheet2AOA;
-      const meta = matrices.sheet2RowMeta;
-      const colCount = matrices.colCountSheet2;
-
-      if (aoa.length === 0) {
-        container.innerHTML = `<div class="empty-state">No hay conectores para mostrar con los filtros seleccionados.</div>`;
-        return;
-      }
-
-      // Encabezados tipo letras de Excel (A, B, C...)
-      let html = `<table class="sheet-table"><thead><tr><th class="row-num">#</th>`;
-      for (let c = 0; c < colCount; c++) {
-        const colLetter = String.fromCharCode(65 + c);
-        html += `<th style="text-align:center;">Col ${colLetter}</th>`;
-      }
-      html += `</tr></thead><tbody>`;
-
-      aoa.forEach((row, rIdx) => {
-        const rowType = meta[rIdx];
-        let trClass = '';
-        if (rowType === 'banner') trClass = 'row-connector-banner';
-        else if (rowType === 'subheader') trClass = 'row-subheaders';
-        else if (rowType === 'blank') trClass = 'row-blank-separator';
-        else if (rowType === 'empty-pin') trClass = 'row-empty-pin';
-
-        html += `<tr class="${trClass}"><td class="row-num">${rIdx + 1}</td>`;
-
-        if (rowType === 'blank') {
-          html += `<td colspan="${colCount}">— Fila en blanco (Separador de conector) —</td>`;
-        } else {
-          row.forEach(cell => {
-            html += `<td>${cell !== '' && cell !== null && cell !== undefined ? cell : ''}</td>`;
-          });
-        }
-        html += `</tr>`;
-      });
-
-      html += `</tbody></table>`;
-      container.innerHTML = html;
+      container.innerHTML = `<pre class="code-preview">${JSON.stringify(generatedHarnessObj, null, 2)}</pre>`;
     }
   }
 
-  // Calcula automáticamente el ancho ideal de cada columna para que en Google Sheets se lea perfecto
-  function autoFitColumns(aoa) {
-    if (!aoa || aoa.length === 0) return [];
-    const colCount = Math.max(...aoa.map(r => r.length));
-    const colWidths = [];
+  function downloadHarnessFile() {
+    if (!generatedHarnessObj) return;
+    const jsonString = JSON.stringify(generatedHarnessObj, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
 
-    for (let c = 0; c < colCount; c++) {
-      let maxLen = 10;
-      for (let r = 0; r < aoa.length; r++) {
-        const val = aoa[r][c];
-        if (val !== null && val !== undefined) {
-          const strLen = String(val).length;
-          // Evitamos que la fila de banner "CONECTOR: ..." ensanche de más la columna A (Cavity)
-          if (c === 0 && String(val).startsWith('CONECTOR:')) continue;
-          if (strLen > maxLen) maxLen = strLen;
-        }
-      }
-      colWidths.push({ wch: Math.min(maxLen + 4, 42) });
-    }
-    return colWidths;
-  }
+    let fileName = document.getElementById('outHarnessName').value.trim() || 'Proyecto.harness';
+    if (!fileName.endsWith('.harness')) fileName += '.harness';
 
-  function downloadUnifiedExcel() {
-    if (!parsedWorkbookData) return;
-
-    const matrices = buildSheetsMatrices();
-    if (!matrices) return;
-
-    const wbNew = XLSX.utils.book_new();
-
-    // 1. Crear Hoja 1: Todos los cables (All)
-    const wsAll = XLSX.utils.aoa_to_sheet(matrices.sheet1AOA);
-    wsAll['!cols'] = autoFitColumns(matrices.sheet1AOA);
-    XLSX.utils.book_append_sheet(wbNew, wsAll, parsedWorkbookData.firstSheetName || 'All');
-
-    // 2. Crear Hoja 2: Pinout Unificado (Todos los conectores separados por una fila en blanco)
-    const wsPinout = XLSX.utils.aoa_to_sheet(matrices.sheet2AOA);
-    wsPinout['!cols'] = autoFitColumns(matrices.sheet2AOA);
-    XLSX.utils.book_append_sheet(wbNew, wsPinout, 'Pinout Unificado');
-
-    // Nombre del archivo final
-    const rawName = document.getElementById('outFileName').value.trim() || 'Cableado_Unificado';
-    const safeName = rawName.replace(/\.xlsx?$/i, '');
-    XLSX.writeFile(wbNew, `${safeName}.xlsx`);
+    a.download = fileName;
+    a.click();
   }
 </script>
 
