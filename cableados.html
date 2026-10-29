@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Constructor .harness (Excel a CAD) - LoomTech</title>
+  <title>Conversor Bidireccional Excel / .harness - LoomTech</title>
   
   <link rel="stylesheet" href="general.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -20,13 +20,40 @@
     
     .main-header {
       background: var(--bg-panel); border: 1px solid var(--border);
-      padding: 20px 28px; border-radius: 12px; margin-bottom: 24px;
+      padding: 20px 28px; border-radius: 12px; margin-bottom: 20px;
       display: flex; align-items: center; justify-content: space-between;
     }
     .header-brand { display: flex; align-items: center; gap: 20px; }
     .header-logo { width: 56px; height: 56px; object-fit: contain; }
     .header-title h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
     .header-title p { margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
+
+    /* SELECTOR PRINCIPAL DE MODO (EXCEL -> HARNESS vs HARNESS -> EXCEL) */
+    .mode-switcher {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 24px;
+    }
+    .mode-card {
+      background: var(--bg-panel); border: 2px solid var(--border);
+      border-radius: 12px; padding: 16px 20px; cursor: pointer;
+      display: flex; align-items: center; gap: 16px; transition: 0.2s;
+      text-align: left; color: var(--text-main);
+    }
+    .mode-card:hover { border-color: #475569; background: #162038; }
+    .mode-card.active {
+      border-color: var(--primary);
+      background: rgba(59, 91, 253, 0.12);
+      box-shadow: 0 8px 25px -5px rgba(59, 91, 253, 0.25);
+    }
+    .mode-icon {
+      width: 46px; height: 46px; border-radius: 10px;
+      background: #0f172a; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; flex-shrink: 0;
+    }
+    .mode-card.active .mode-icon { background: var(--primary); border-color: var(--primary); }
+    .mode-info h3 { font-size: 1.05rem; margin: 0 0 4px 0; color: #fff; }
+    .mode-info p { font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.35; }
 
     .dashboard-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
     
@@ -74,6 +101,16 @@
     .btn-generate:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
     .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    .btn-excel-out {
+      background: #10b981; color: #052e16; font-weight: 700;
+      border: none; padding: 13px 16px; border-radius: 8px;
+      cursor: pointer; width: 100%; font-size: 0.95rem;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 16px; transition: 0.2s;
+    }
+    .btn-excel-out:hover:not(:disabled) { background: #34d399; transform: translateY(-1px); }
+    .btn-excel-out:disabled { opacity: 0.4; cursor: not-allowed; }
+
     .sheet-tabs {
       display: flex; gap: 8px; border-bottom: 1px solid var(--border);
       padding-bottom: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between;
@@ -112,6 +149,16 @@
     }
     .audit-table tr:hover td { background: #151f38; }
 
+    .row-header-repeat td {
+      background: #1e293b !important; color: #60a5fa !important;
+      font-weight: 700; font-size: 0.75rem; text-transform: uppercase;
+      border-top: 2px solid #334155 !important;
+    }
+    .row-blank-sep td {
+      background: #090d14 !important; color: #475569 !important;
+      font-size: 0.7rem; font-style: italic; text-align: center; padding: 4px !important;
+    }
+
     .conn-thumb {
       width: 34px; height: 34px; object-fit: contain; background: #fff;
       border-radius: 6px; padding: 2px; border: 1px solid #334155; vertical-align: middle; margin-right: 6px;
@@ -131,6 +178,7 @@
 
     @media (max-width: 980px) {
       .dashboard-layout { grid-template-columns: 1fr; }
+      .mode-switcher { grid-template-columns: 1fr; }
       .control-panel { position: static; }
     }
   </style>
@@ -143,16 +191,38 @@
     <div class="header-brand">
       <img src="logo-transparente.webp" alt="LoomTech" class="header-logo" onerror="this.style.display='none'">
       <div class="header-title">
-        <h1>Constructor de Proyectos .harness (Excel &rarr; CAD)</h1>
-        <p>Asignación de fichas Deutsch (DT/DTM/DTP), fotos visibles y distribución horizontal por distancia</p>
+        <h1>Conversor Bidireccional de Cableados (Excel &harr; .harness)</h1>
+        <p>Genera archivos CAD desde tu planilla o reconstruye la planilla Excel desde un archivo .harness</p>
       </div>
     </div>
     <a href="index.html" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Hub</a>
   </div>
 
-  <div class="dashboard-layout">
+  <!-- SELECTOR DE MODO PRINCIPAL -->
+  <div class="mode-switcher">
+    <button type="button" class="mode-card active" id="btnModeE2H" onclick="setAppMode('excelToHarness')">
+      <div class="mode-icon">📊 &rarr; 🔌</div>
+      <div class="mode-info">
+        <h3>De Excel a .harness</h3>
+        <p>Convierte tu planilla de pinouts en un archivo <code>.harness</code> con fichas Deutsch, fotos visibles y distribución por largo.</p>
+      </div>
+    </button>
+
+    <button type="button" class="mode-card" id="btnModeH2E" onclick="setAppMode('harnessToExcel')">
+      <div class="mode-icon">🔌 &rarr; 📊</div>
+      <div class="mode-info">
+        <h3>De .harness a Excel</h3>
+        <p>Convierte un archivo <code>.harness</code> en un Excel con el modelo exacto de tu planilla (Conector Principal + Hoja 2 apilada).</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- ========================================================================
+       SECCIÓN 1: MODO "DE EXCEL A .HARNESS" (INTACTO)
+       ======================================================================== -->
+  <div id="sectionExcelToHarness" class="dashboard-layout">
     
-    <!-- PANEL IZQUIERDO -->
+    <!-- PANEL IZQUIERDO (EXCEL -> HARNESS) -->
     <div class="control-panel">
       <h2>1. Planilla Excel de Pinouts</h2>
       <div class="file-drop-area">
@@ -227,7 +297,7 @@
       </button>
     </div>
 
-    <!-- PANEL DERECHO: AUDITORÍA -->
+    <!-- PANEL DERECHO (EXCEL -> HARNESS) -->
     <div class="preview-panel">
       <div class="sheet-tabs">
         <div class="tab-group">
@@ -254,9 +324,119 @@
     </div>
 
   </div>
+
+  <!-- ========================================================================
+       SECCIÓN 2: MODO INVERSO "DE .HARNESS A EXCEL" (MISMO MODELO DE ENTRADA)
+       ======================================================================== -->
+  <div id="sectionHarnessToExcel" class="dashboard-layout" style="display: none;">
+    
+    <!-- PANEL IZQUIERDO (HARNESS -> EXCEL) -->
+    <div class="control-panel">
+      <h2>1. Cargar Archivo .harness</h2>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+        Sube tu archivo <strong>.harness</strong> para reconstruir el Excel con el formato exacto de tu planilla manual.
+      </p>
+
+      <div class="file-drop-area">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:28px; height:28px; color:#60a5fa;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+        </svg>
+        <span class="file-msg" id="h2eFileMsg">Haz clic o arrastra tu archivo .harness aquí</span>
+        <input class="file-input" type="file" id="h2eFileInput" accept=".harness, .json" onchange="handleH2EFileUpload(event)">
+      </div>
+
+      <div class="stats-bar" id="h2eStatsBar" style="display: none;">
+        <div class="stat-box"><strong id="h2eStatConns">0</strong><span>Conectores</span></div>
+        <div class="stat-box"><strong id="h2eStatWires">0</strong><span>Cables</span></div>
+        <div class="stat-box"><strong id="h2eStatBundles">0</strong><span>Tramos</span></div>
+      </div>
+
+      <h3 style="font-size: 0.9rem; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
+        2. Opciones de la Planilla Excel
+      </h3>
+
+      <label>Conector Principal (Hoja 1)</label>
+      <select id="h2eMainConnSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
+        <option value="auto">Automático (El de mayor cantidad de pines)</option>
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label>Unidad col. "Largo"</label>
+          <select id="h2eLengthUnitSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
+            <option value="cm" selected>Centímetros (cm)</option>
+            <option value="mm">Milímetros (mm)</option>
+          </select>
+        </div>
+        <div>
+          <label>Idioma de Colores</label>
+          <select id="h2eColorLangSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
+            <option value="es" selected>Español (Blanco, Rojo...)</option>
+            <option value="en">Inglés (White, Red...)</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Nombre del archivo Excel a descargar</label>
+      <input type="text" id="h2eOutFileName" class="input-dark" placeholder="Motor MaxiRally Kaufmann.xlsx">
+
+      <label class="filter-option" title="Dejar la Columna A vacía como margen izquierdo, igual que en tu planilla original">
+        <input type="checkbox" id="chkH2EEmptyColA" checked onchange="rebuildExcelFromHarness()">
+        <span>Respetar Columna A vacía de margen (Modelo Original)</span>
+      </label>
+
+      <label class="filter-option" title="Oculta en la Hoja 2 los conectores que todavía no tengan ningún cable conectado">
+        <input type="checkbox" id="chkH2EHideEmptyConns" onchange="rebuildExcelFromHarness()">
+        <span>Omitir conectores sin cables conectados</span>
+      </label>
+
+      <button type="button" class="btn-excel-out" id="btnDownloadH2E" onclick="downloadExcelFromHarness()" disabled>
+        📥 Descargar Excel (.xlsx) con Formato de Entrada
+      </button>
+    </div>
+
+    <!-- PANEL DERECHO (HARNESS -> EXCEL) -->
+    <div class="preview-panel">
+      <div class="sheet-tabs">
+        <div class="tab-group">
+          <button type="button" class="tab-btn active" id="tabH2ESheet1" onclick="switchH2ETab('sheet1')">
+            📋 Hoja 1: <span id="lblH2ESheet1Name">Conector Principal</span> <span class="tab-badge" id="badgeH2ESheet1">0 filas</span>
+          </button>
+          <button type="button" class="tab-btn" id="tabH2ESheet2" onclick="switchH2ETab('sheet2')">
+            📑 Hoja 2: Periféricos Apilados <span class="tab-badge" id="badgeH2ESheet2">0 bloques</span>
+          </button>
+        </div>
+        <span style="font-size: 0.76rem; color: var(--text-muted);">
+          Columnas: Nombre | Conector | Pin | Descripcion | Conductor | Color | Largo | Termina en | Pin | Asignacion
+        </span>
+      </div>
+
+      <div id="h2ePreviewContainer" class="table-scroll">
+        <div class="empty-state">
+          <h3 style="color: #cbd5e1; margin-bottom: 8px;">Sube tu archivo .harness en el panel izquierdo</h3>
+          <p style="font-size: 0.86rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
+            El conversor generará un archivo <strong>.xlsx</strong> idéntico a tu modelo de entrada: la <strong>Hoja 1</strong> con la ficha principal (ej. <em>Link Firewall Engine</em>) y la <strong>Hoja 2</strong> con todos los sensores/actuadores uno debajo del otro separados por una fila en blanco y con su encabezado repetido.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
 
 <script>
+  // =========================================================================
+  // CAMBIO DE MODO EN LA INTERFAZ
+  // =========================================================================
+  function setAppMode(mode) {
+    const isE2H = (mode === 'excelToHarness');
+    document.getElementById('sectionExcelToHarness').style.display = isE2H ? 'grid' : 'none';
+    document.getElementById('sectionHarnessToExcel').style.display = isE2H ? 'none' : 'grid';
+    document.getElementById('btnModeE2H').classList.toggle('active', isE2H);
+    document.getElementById('btnModeH2E').classList.toggle('active', !isE2H);
+  }
+
   // =========================================================================
   // 1. CATÁLOGO INTEGRADO DE FICHAS DEUTSCH (DT, DTM, DTP - HEMBRA Y MACHO)
   // =========================================================================
@@ -857,7 +1037,7 @@
   }
 
   // =========================================================================
-  // MOTOR PRINCIPAL: CONECTORES LIBRES DISTRIBUIDOS HORIZONTALMENTE POR LARGO
+  // MOTOR 1: DE EXCEL A .HARNESS (INTACTO)
   // =========================================================================
   function rebuildHarness() {
     if (!rawExcelWorkbook) return;
@@ -865,7 +1045,7 @@
     usedIds.clear();
     const includeUnions = document.getElementById('chkIncludeUnions').checked;
     const showPartImages = document.getElementById('chkShowPartImages').checked;
-    const unitMode = document.getElementById('lengthUnitSelect').value; // 'cm' o 'mm'
+    const unitMode = document.getElementById('lengthUnitSelect').value;
     const scaleX = parseFloat(document.getElementById('scaleXSelect').value) || 1;
 
     const connectorsMap = new Map();
@@ -903,7 +1083,6 @@
       return cleanPin;
     }
 
-    // 1. Recorrer todas las hojas del Excel
     rawExcelWorkbook.SheetNames.forEach(sheetName => {
       const sheet = rawExcelWorkbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
@@ -972,7 +1151,6 @@
 
           const targetConn = getOrCreateConnector(cellDestRaw, '');
           if (targetConn) {
-            // Si el largo estaba escrito en la fila de Link Firewall hacia el sensor, se lo asignamos al sensor
             if (parsedMm) targetConn.lengthsMm.push(parsedMm);
             if (cellPinDest && cellPinDest !== '-') {
               registerPin(targetConn, cellPinDest);
@@ -992,7 +1170,6 @@
       }
     });
 
-    // 2. Conciliar cables de ida y vuelta
     const finalWires = [];
     const consumedIndices = new Set();
 
@@ -1071,11 +1248,9 @@
       registerPin(targetObj, w.toPin);
     });
 
-    // 3. Asignar fichas Deutsch y calcular la distancia desde el conector principal
     const usedPartsMap = new Map();
     const allConnectorsArray = Array.from(connectorsMap.values());
 
-    // El conector con más pines es la ficha principal (ej: Link Firewall Engine)
     let mainHubConn = allConnectorsArray[0];
     allConnectorsArray.forEach(c => {
       if (c.pinsOrder.length > (mainHubConn?.pinsOrder.length || 0)) {
@@ -1111,12 +1286,10 @@
 
       connData.harnessId = genId();
 
-      // Distancia desde la ficha principal (si hay largos cargados para este conector)
       if (connData === mainHubConn) {
         connData.distanceFromMainMm = 0;
         connData.hasExplicitLength = true;
       } else if (connData.lengthsMm.length > 0) {
-        // Promedio redondeado de los largos declarados en los pines de este conector
         const sum = connData.lengthsMm.reduce((a, b) => a + b, 0);
         connData.distanceFromMainMm = Math.round(sum / connData.lengthsMm.length);
         connData.hasExplicitLength = true;
@@ -1126,10 +1299,6 @@
       }
     });
 
-    // 4. DISTRIBUCIÓN HORIZONTAL SEGÚN EL LARGO (Sin ramales/bundles forzados)
-    // - Ficha principal fija a la izquierda en X = 150, Y = 240
-    // - Conectores con Largo cargado: X = 150 + (distanciaMm * scaleX)
-    // - Conectores sin Largo cargado aún: se distribuyen en columnas ordenadas a partir de X = 450
     const finalHarnessConnectors = [];
     const MAIN_X = 150;
     const MAIN_Y = 240;
@@ -1157,7 +1326,6 @@
 
     const peripheralConnectors = allConnectorsArray.filter(c => c !== mainHubConn);
 
-    // Ordenar periféricos de menor a mayor distancia (los que no tienen largo van después ordenados por nombre)
     peripheralConnectors.sort((a, b) => {
       if (a.hasExplicitLength && b.hasExplicitLength) return a.distanceFromMainMm - b.distanceFromMainMm;
       if (a.hasExplicitLength) return -1;
@@ -1165,18 +1333,15 @@
       return 0;
     });
 
-    // Agrupar por franjas verticales (buckets de X) para que si dos conectores tienen el mismo largo no se pisen en Y
-    const xBuckets = new Map(); // xCoordRedondeada -> cantidad de conectores en esa columna
+    const xBuckets = new Map();
     let fallbackIndex = 0;
 
     peripheralConnectors.forEach(connData => {
       let targetX;
       if (connData.hasExplicitLength) {
-        // Redondear a múltiplos de 30px (grilla nativa de Harness Design)
         const rawX = MAIN_X + Math.max(240, Math.round(connData.distanceFromMainMm * scaleX));
         targetX = Math.round(rawX / 60) * 60;
       } else {
-        // Si aún no tiene largo en el Excel, organizarlos en columnas limpias hacia la derecha según su orden
         const col = Math.floor(fallbackIndex / 5);
         targetX = 480 + col * 240;
         fallbackIndex++;
@@ -1185,7 +1350,6 @@
       const countInCol = xBuckets.get(targetX) || 0;
       xBuckets.set(targetX, countInCol + 1);
 
-      // Escalonar verticalmente alrededor de Y = 240 (ej: 60, 210, 360, 510, -90...)
       const yOffsets = [-180, -30, 120, 270, 420, -330, 570];
       const targetY = MAIN_Y + (yOffsets[countInCol % yOffsets.length] + Math.floor(countInCol / yOffsets.length) * 60);
 
@@ -1223,7 +1387,6 @@
       finalHarnessConnectors.push(connJson);
     });
 
-    // 5. Construir la lista de Cables (wires)
     const harnessWires = [];
     auditWiresList = [];
 
@@ -1261,7 +1424,6 @@
       });
     });
 
-    // 6. Armar el JSON .harness final (conectores sueltos sin bundles forzados)
     generatedHarnessObj = {
       "$schema": "https://docs.harness.design/files/harness/schema/v1.2.json",
       "$docs": "https://docs.harness.design/files/harness/editing-guide.md",
@@ -1403,6 +1565,438 @@
 
     a.download = fileName;
     a.click();
+  }
+
+  // =========================================================================
+  // MOTOR 2: DE .HARNESS A EXCEL (MISMO MODELO EXACTO QUE EL DE ENTRADA)
+  // =========================================================================
+  let loadedHarnessForExcel = null;
+  let h2eSheet1AOA = [];
+  let h2eSheet2AOA = [];
+  let h2eMainSheetName = 'Link Firewall';
+  let currentH2ETab = 'sheet1';
+
+  const COLOR_EN_TO_ES = {
+    'white': 'Blanco',
+    'black': 'Negro',
+    'red': 'Rojo',
+    'green': 'Verde',
+    'blue': 'Azul',
+    'yellow': 'Amarillo',
+    'orange': 'Naranja',
+    'brown': 'Marron',
+    'gray': 'Gris', 'grey': 'Gris',
+    'purple': 'Violeta', 'violet': 'Violeta',
+    'pink': 'Rosa'
+  };
+
+  function translateColorToExcel(color, stripeColor, lang) {
+    if (!color) return lang === 'es' ? 'Blanco' : 'White';
+    if (lang !== 'es') {
+      return stripeColor ? `${color}/${stripeColor}` : color;
+    }
+    const c1 = COLOR_EN_TO_ES[String(color).toLowerCase()] || color;
+    if (stripeColor) {
+      const c2 = COLOR_EN_TO_ES[String(stripeColor).toLowerCase()] || stripeColor;
+      return `${c1}/${c2}`;
+    }
+    return c1;
+  }
+
+  // Convierte el partId del .harness a texto amigable estilo "DTM 3 Vias" o "DT 2 Vias"
+  function formatPartNameForExcel(partObj, fallbackCavitiesCount) {
+    if (!partObj) return '';
+    const pn = (partObj.partNumber || '').toUpperCase();
+    const match = pn.match(/^(DTM|DTP|DT)0([46])-(\d{1,2})[SP]/);
+    if (match) {
+      const series = match[1];
+      const isMale = match[2] === '4';
+      const ways = match[3];
+      return `${series} ${ways} Vias${isMale ? ' Macho' : ''}`;
+    }
+    if (partObj.pinout && partObj.pinout.name) {
+      return partObj.pinout.name.replace('-way', ' Vias');
+    }
+    return partObj.partNumber || `${fallbackCavitiesCount} Vias`;
+  }
+
+  // Calcula la distancia en mm entre dos conectores recorriendo los bundles y branchPoints del .harness (BFS)
+  function computeBundlePathLengthMm(harnessData, connIdA, connIdB) {
+    if (!harnessData.bundles || harnessData.bundles.length === 0 || !connIdA || !connIdB) return null;
+    if (connIdA === connIdB) return 0;
+
+    const adj = new Map();
+    function addEdge(u, v, len) {
+      if (!adj.has(u)) adj.set(u, []);
+      if (!adj.has(v)) adj.set(v, []);
+      adj.get(u).push({ to: v, len: len });
+      adj.get(v).push({ to: u, len: len });
+    }
+
+    harnessData.bundles.forEach(b => {
+      const val = (b.length && typeof b.length.value === 'number') ? b.length.value : 0;
+      if (b.sourceId && b.targetId) {
+        addEdge(b.sourceId, b.targetId, val);
+      }
+    });
+
+    const visited = new Set([connIdA]);
+    const queue = [{ node: connIdA, dist: 0 }];
+
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      if (curr.node === connIdB) return curr.dist;
+
+      const neighbors = adj.get(curr.node) || [];
+      for (const nb of neighbors) {
+        if (!visited.has(nb.to)) {
+          visited.add(nb.to);
+          queue.push({ node: nb.to, dist: curr.dist + nb.len });
+        }
+      }
+    }
+    return null;
+  }
+
+  function handleH2EFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const msg = document.getElementById('h2eFileMsg');
+    msg.innerText = `Archivo cargado: ${file.name}`;
+    msg.style.color = '#34d399';
+
+    const cleanName = file.name.replace(/\.(harness|json)$/i, '').replace(/\./g, ' ');
+    document.getElementById('h2eOutFileName').value = `${cleanName}.xlsx`;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        loadedHarnessForExcel = JSON.parse(e.target.result);
+        populateMainConnSelect();
+        rebuildExcelFromHarness();
+      } catch (err) {
+        alert("El archivo seleccionado no tiene un formato .harness (JSON) válido.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function populateMainConnSelect() {
+    const select = document.getElementById('h2eMainConnSelect');
+    select.innerHTML = `<option value="auto">Automático (El de mayor cantidad de pines)</option>`;
+    if (!loadedHarnessForExcel || !loadedHarnessForExcel.connectors) return;
+
+    loadedHarnessForExcel.connectors.forEach(c => {
+      const count = c.cavities ? c.cavities.length : 0;
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.innerText = `${c.label || c.id} (${count} pines)`;
+      select.appendChild(opt);
+    });
+  }
+
+  function rebuildExcelFromHarness() {
+    if (!loadedHarnessForExcel) return;
+
+    const connectors = loadedHarnessForExcel.connectors || [];
+    const wires = loadedHarnessForExcel.wires || [];
+    const bundles = loadedHarnessForExcel.bundles || [];
+    const partsList = loadedHarnessForExcel.connectorParts || [];
+
+    const unitOut = document.getElementById('h2eLengthUnitSelect').value; // 'cm' o 'mm'
+    const colorLang = document.getElementById('h2eColorLangSelect').value; // 'es' o 'en'
+    const emptyColA = document.getElementById('chkH2EEmptyColA').checked;
+    const hideEmptyConns = document.getElementById('chkH2EHideEmptyConns').checked;
+    const selectedMainId = document.getElementById('h2eMainConnSelect').value;
+
+    // Mapa de partes por ID
+    const partsById = new Map();
+    activePartsCatalog.forEach(p => partsById.set(p.id, p));
+    partsList.forEach(p => partsById.set(p.id, p));
+
+    // Mapa de conectores y cavidades
+    const connById = new Map();
+    connectors.forEach(c => {
+      const cavMap = new Map(); // cavId -> numero de pin (1..N)
+      if (Array.isArray(c.cavities)) {
+        c.cavities.forEach((cav, idx) => {
+          cavMap.set(cav.id, String(idx + 1));
+        });
+      }
+      connById.set(c.id, {
+        raw: c,
+        id: c.id,
+        label: c.label || c.id,
+        cavities: c.cavities || [],
+        cavToPinNumber: cavMap,
+        partObj: c.partId ? partsById.get(c.partId) : null
+      });
+    });
+
+    // Determinar Conector Principal para la Hoja 1
+    let mainConn = null;
+    if (selectedMainId !== 'auto' && connById.has(selectedMainId)) {
+      mainConn = connById.get(selectedMainId);
+    } else {
+      connById.forEach(c => {
+        if (!mainConn || c.cavities.length > mainConn.cavities.length) {
+          mainConn = c;
+        }
+      });
+    }
+
+    // Indexar conexiones por (connId + cavId)
+    const connectionsByCav = new Map(); // `${connId}:${cavId}` -> array de conexiones hacia otros extremos
+    wires.forEach(w => {
+      if (!w.source || !w.target) return;
+      const srcConn = connById.get(w.source.id);
+      const tgtConn = connById.get(w.target.id);
+      if (!srcConn || !tgtConn) return;
+
+      const srcPin = srcConn.cavToPinNumber.get(w.source.handle) || '1';
+      const tgtPin = tgtConn.cavToPinNumber.get(w.target.handle) || '1';
+      const colorFormatted = translateColorToExcel(w.color, w.stripeColor, colorLang);
+      const gaugeFormatted = w.gauge ? String(w.gauge) : '';
+
+      const pathMm = computeBundlePathLengthMm(loadedHarnessForExcel, srcConn.id, tgtConn.id);
+      let lengthFormatted = '';
+      if (pathMm !== null && pathMm > 0) {
+        lengthFormatted = unitOut === 'cm' ? Number((pathMm / 10).toFixed(1)) : pathMm;
+      }
+
+      const keySrc = `${srcConn.id}:${w.source.handle}`;
+      const keyTgt = `${tgtConn.id}:${w.target.handle}`;
+
+      if (!connectionsByCav.has(keySrc)) connectionsByCav.set(keySrc, []);
+      if (!connectionsByCav.has(keyTgt)) connectionsByCav.set(keyTgt, []);
+
+      connectionsByCav.get(keySrc).push({
+        destConnName: tgtConn.label,
+        destPin: tgtPin,
+        color: colorFormatted,
+        gauge: gaugeFormatted,
+        length: lengthFormatted,
+        desc: w.label || w.ident || ''
+      });
+
+      connectionsByCav.get(keyTgt).push({
+        destConnName: srcConn.label,
+        destPin: srcPin,
+        color: colorFormatted,
+        gauge: gaugeFormatted,
+        length: lengthFormatted,
+        desc: w.label || w.ident || ''
+      });
+    });
+
+    const prefix = emptyColA ? [''] : [];
+    const headerRow = [...prefix, 'Nombre', 'Conector', 'Pin', 'Descripcion', 'Conductor', 'Color', 'Largo', 'Termina en', 'Pin', 'Asignacion'];
+
+    // Construir bloque de filas para un conector siguiendo exactamente tu modelo de Excel
+    function buildConnectorBlockRows(connInfo) {
+      const blockRows = [];
+      const connectorTypeStr = formatPartNameForExcel(connInfo.partObj, connInfo.cavities.length);
+      let isFirstRowOfConnector = true;
+
+      if (connInfo.cavities.length === 0) {
+        blockRows.push([
+          ...prefix,
+          connInfo.label,
+          connectorTypeStr,
+          '1', '', '', '', '', '', '', ''
+        ]);
+        return { rows: blockRows, connectedCount: 0 };
+      }
+
+      let connectedCount = 0;
+
+      connInfo.cavities.forEach((cav, idx) => {
+        const pinNum = String(idx + 1);
+        const key = `${connInfo.id}:${cav.id}`;
+        const matches = connectionsByCav.get(key) || [];
+
+        if (matches.length === 0) {
+          blockRows.push([
+            ...prefix,
+            isFirstRowOfConnector ? connInfo.label : '',
+            isFirstRowOfConnector ? connectorTypeStr : '',
+            pinNum,
+            '', '', '', '', '', '', ''
+          ]);
+          isFirstRowOfConnector = false;
+        } else {
+          connectedCount += matches.length;
+          matches.forEach((m, mIdx) => {
+            // Si hay más de un cable en el mismo pin (ej. empalme en el pin), anotar el segundo en Asignación
+            const extraNote = (matches.length > 1 && mIdx === 0)
+              ? `Union ${matches.slice(1).map(x => x.destConnName).join(' / ')}`
+              : '';
+
+            blockRows.push([
+              ...prefix,
+              isFirstRowOfConnector ? connInfo.label : '',
+              isFirstRowOfConnector ? connectorTypeStr : '',
+              pinNum,
+              m.desc || '',
+              m.gauge || '',
+              m.color || '',
+              m.length !== '' ? m.length : '',
+              m.destConnName || '',
+              m.destPin || '',
+              extraNote
+            ]);
+            isFirstRowOfConnector = false;
+          });
+        }
+      });
+
+      return { rows: blockRows, connectedCount: connectedCount };
+    }
+
+    // --- 1. ARMAR HOJA 1 (CONECTOR PRINCIPAL) ---
+    h2eSheet1AOA = [];
+    if (mainConn) {
+      h2eMainSheetName = mainConn.label.slice(0, 28);
+      h2eSheet1AOA.push(headerRow);
+      const mainBlock = buildConnectorBlockRows(mainConn);
+      h2eSheet1AOA.push(...mainBlock.rows);
+    }
+
+    // --- 2. ARMAR HOJA 2 (TODOS LOS DEMÁS CONECTORES APILADOS CON FILA EN BLANCO Y ENCABEZADO REPETIDO) ---
+    h2eSheet2AOA = [];
+    const peripheralList = Array.from(connById.values()).filter(c => !mainConn || c.id !== mainConn.id);
+    let activeBlocksCount = 0;
+
+    peripheralList.forEach((connInfo) => {
+      const block = buildConnectorBlockRows(connInfo);
+      if (hideEmptyConns && block.connectedCount === 0) return;
+
+      if (activeBlocksCount > 0) {
+        // Fila completamente en blanco de separación entre un conector y el siguiente
+        h2eSheet2AOA.push(headerRow.map(() => ''));
+      }
+
+      // Repetir el encabezado Nombre | Conector | Pin... arriba de cada conector (igual que en tu Hoja 2)
+      h2eSheet2AOA.push(headerRow);
+      h2eSheet2AOA.push(...block.rows);
+      activeBlocksCount++;
+    });
+
+    // Actualizar indicadores
+    document.getElementById('h2eStatsBar').style.display = 'grid';
+    document.getElementById('h2eStatConns').innerText = connectors.length;
+    document.getElementById('h2eStatWires').innerText = wires.length;
+    document.getElementById('h2eStatBundles').innerText = bundles.length;
+
+    document.getElementById('lblH2ESheet1Name').innerText = h2eMainSheetName;
+    document.getElementById('badgeH2ESheet1').innerText = `${Math.max(0, h2eSheet1AOA.length - 1)} pines`;
+    document.getElementById('badgeH2ESheet2').innerText = `${activeBlocksCount} conectores`;
+    document.getElementById('btnDownloadH2E').disabled = false;
+
+    renderH2EPreview();
+  }
+
+  function switchH2ETab(tab) {
+    currentH2ETab = tab;
+    document.getElementById('tabH2ESheet1').classList.toggle('active', tab === 'sheet1');
+    document.getElementById('tabH2ESheet2').classList.toggle('active', tab === 'sheet2');
+    renderH2EPreview();
+  }
+
+  function renderH2EPreview() {
+    if (!loadedHarnessForExcel) return;
+    const container = document.getElementById('h2ePreviewContainer');
+    const aoa = currentH2ETab === 'sheet1' ? h2eSheet1AOA : h2eSheet2AOA;
+    const emptyColA = document.getElementById('chkH2EEmptyColA').checked;
+    const startColIdx = emptyColA ? 1 : 0;
+
+    if (!aoa || aoa.length === 0) {
+      container.innerHTML = `<div class="empty-state">No hay filas para mostrar en esta hoja.</div>`;
+      return;
+    }
+
+    const colTitles = ['Nombre', 'Conector', 'Pin', 'Descripcion', 'Conductor', 'Color', 'Largo', 'Termina en', 'Pin', 'Asignacion'];
+    let html = `<table class="audit-table"><thead><tr><th style="width:42px; text-align:center;">Fila</th>`;
+    colTitles.forEach(t => { html += `<th>${t}</th>`; });
+    html += `</tr></thead><tbody>`;
+
+    aoa.forEach((row, rIdx) => {
+      const visibleCells = row.slice(startColIdx);
+      const isBlank = visibleCells.every(c => String(c).trim() === '');
+      const isHeader = String(visibleCells[0]).trim().toLowerCase() === 'nombre';
+
+      if (isBlank) {
+        html += `<tr class="row-blank-sep"><td style="text-align:center;">${rIdx + 1}</td><td colspan="10">— Fila en blanco de separación —</td></tr>`;
+      } else if (isHeader) {
+        html += `<tr class="row-header-repeat"><td style="text-align:center;">${rIdx + 1}</td>`;
+        visibleCells.forEach(c => { html += `<td>${c}</td>`; });
+        html += `</tr>`;
+      } else {
+        html += `<tr><td style="text-align:center; color:#64748b; font-family:monospace;">${rIdx + 1}</td>`;
+        for (let i = 0; i < 10; i++) {
+          const val = visibleCells[i] !== undefined ? visibleCells[i] : '';
+          if (i === 0 && val) {
+            html += `<td><strong style="color:#fff;">${val}</strong></td>`;
+          } else if (i === 1 && val) {
+            html += `<td><span class="badge-part">${val}</span></td>`;
+          } else if ((i === 2 || i === 8) && val) {
+            html += `<td style="font-weight:700; color:#34d399; font-family:monospace;">${val}</td>`;
+          } else if (i === 7 && val) {
+            html += `<td style="font-weight:600; color:#38bdf8;">${val}</td>`;
+          } else {
+            html += `<td>${val}</td>`;
+          }
+        }
+        html += `</tr>`;
+      }
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+  }
+
+  function autoFitExcelCols(aoa) {
+    if (!aoa || aoa.length === 0) return [];
+    const colCount = Math.max(...aoa.map(r => r.length));
+    const widths = [];
+    for (let c = 0; c < colCount; c++) {
+      if (c === 0 && document.getElementById('chkH2EEmptyColA').checked) {
+        widths.push({ wch: 4 });
+        continue;
+      }
+      let maxLen = 10;
+      for (let r = 0; r < aoa.length; r++) {
+        const val = aoa[r][c];
+        if (val !== null && val !== undefined) {
+          const l = String(val).length;
+          if (l > maxLen) maxLen = l;
+        }
+      }
+      widths.push({ wch: Math.min(maxLen + 4, 38) });
+    }
+    return widths;
+  }
+
+  function downloadExcelFromHarness() {
+    if (!loadedHarnessForExcel) return;
+
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: Conector Principal (ej. "Link Firewall")
+    const ws1 = XLSX.utils.aoa_to_sheet(h2eSheet1AOA);
+    ws1['!cols'] = autoFitExcelCols(h2eSheet1AOA);
+    XLSX.utils.book_append_sheet(wb, ws1, h2eMainSheetName || 'Link Firewall');
+
+    // Hoja 2: Periféricos apilados ("Hoja 2")
+    const ws2 = XLSX.utils.aoa_to_sheet(h2eSheet2AOA);
+    ws2['!cols'] = autoFitExcelCols(h2eSheet2AOA);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Hoja 2');
+
+    let outName = document.getElementById('h2eOutFileName').value.trim() || 'Plano_Reconstruido.xlsx';
+    if (!/\.xlsx$/i.test(outName)) outName += '.xlsx';
+
+    XLSX.writeFile(wb, outName);
   }
 </script>
 
