@@ -5,427 +5,1022 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Conversor Bidireccional Excel / .harness - LoomTech</title>
   
+  <!-- Vinculamos el CSS General Unificado -->
   <link rel="stylesheet" href="general.css">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Librería xlsx-js-style: soporta lectura/escritura de Excel CON colores de fondo, bordes, wrapText y celdas combinadas -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <style>
-    :root {
-      --bg-body: #0b0f17; --bg-panel: #131b2e; --border: #1e293b;
-      --text-main: #f8fafc; --text-muted: #94a3b8;
+    /* ==========================================================================
+       ESTILOS ESPECÍFICOS DE CABLEADOS.HTML (DARK STREAMING & GLASMORFISMO)
+       ========================================================================== */
+    body {
+      padding: 0;
+      background-color: var(--bg-body);
+      background-image: 
+        radial-gradient(at 10% 0%, rgba(59, 91, 253, 0.24) 0px, transparent 50%),
+        radial-gradient(at 90% 5%, rgba(0, 212, 255, 0.12) 0px, transparent 45%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
     }
 
-    body { background: var(--bg-body); color: var(--text-main); display: flex; flex-direction: column; }
-    h2, h3 { color: #f8fafc; margin: 0; }
-    label { color: #cbd5e1; font-size: 0.82rem; font-weight: 600; display: block; margin-top: 12px; margin-bottom: 6px; }
-    
-    .main-header {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      padding: 20px 28px; border-radius: 12px; margin-bottom: 20px;
-      display: flex; align-items: center; justify-content: space-between;
+    /* --- 1. NAVBAR FIJA CON GLASMORFISMO --- */
+    .navbar-glass {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: rgba(18, 18, 18, 0.72);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
-    .header-brand { display: flex; align-items: center; gap: 20px; }
-    .header-logo { width: 56px; height: 56px; object-fit: contain; }
-    .header-title h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
-    .header-title p { margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
 
-    /* SELECTOR PRINCIPAL DE MODO (EXCEL -> HARNESS vs HARNESS -> EXCEL) */
-    .mode-switcher {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    .navbar-glass.scrolled {
+      background: rgba(12, 12, 14, 0.9);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    }
+
+    .nav-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(59, 91, 253, 0.25), rgba(0, 212, 255, 0.1));
+      border: 1px solid rgba(59, 91, 253, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: transform 0.25s ease;
+    }
+
+    .brand:hover .brand-logo-wrap {
+      transform: rotate(-4deg) scale(1.06);
+    }
+
+    .brand img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .brand p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (min-width: 860px) {
+      .nav-links { display: flex; }
+      .nav-inner { padding: 14px 32px; }
+    }
+
+    .nav-pill {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      transition: all 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .nav-pill.active {
+      color: #ffffff;
+      background: rgba(59, 91, 253, 0.22);
+      border: 1px solid rgba(59, 91, 253, 0.45);
+    }
+
+    /* --- 2. CONTENEDOR PRINCIPAL --- */
+    .main-wrapper {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 60px 16px;
+      flex: 1;
+    }
+
+    @media (min-width: 768px) {
+      .main-wrapper {
+        padding: 32px 32px 80px 32px;
+      }
+    }
+
+    /* --- 3. HERO COMPACTO CON DEGRADADO Y TÍTULO INTERACTIVO --- */
+    .page-hero {
+      position: relative;
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
       margin-bottom: 24px;
+      background: 
+        radial-gradient(700px circle at var(--hero-x, 20%) var(--hero-y, 30%), rgba(59, 91, 253, 0.38), transparent 55%),
+        linear-gradient(135deg, #1b2442 0%, #151926 55%, #181818 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
+
+    @media (min-width: 768px) {
+      .page-hero {
+        padding: 34px 38px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .interactive-title {
+      font-size: clamp(1.65rem, 3.6vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+      background: linear-gradient(
+        var(--title-angle, 95deg),
+        #ffffff 0%,
+        #dbe4ff 45%,
+        #00d4ff 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      max-width: 640px;
+      margin: 0;
+    }
+
+    /* --- 4. CARRUSEL / SELECTOR DE MODO ESTILO TARJETAS INTERACTIVAS --- */
+    .mode-switcher {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding: 4px 2px 12px 2px;
+      margin-bottom: 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .mode-card {
-      background: var(--bg-panel); border: 2px solid var(--border);
-      border-radius: 12px; padding: 16px 20px; cursor: pointer;
-      display: flex; align-items: center; gap: 16px; transition: 0.2s;
-      text-align: left; color: var(--text-main);
+      flex: 0 0 88%;
+      scroll-snap-align: start;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+      color: var(--text-main);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
-    .mode-card:hover { border-color: #475569; background: #162038; }
+
+    @media (min-width: 680px) {
+      .mode-switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow-x: visible;
+      }
+      .mode-card {
+        flex: unset;
+      }
+    }
+
+    .mode-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--grad-card-glow);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-4px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .mode-card:hover::before {
+      opacity: 1;
+    }
+
     .mode-card.active {
       border-color: var(--primary);
-      background: rgba(59, 91, 253, 0.12);
-      box-shadow: 0 8px 25px -5px rgba(59, 91, 253, 0.25);
+      background: linear-gradient(135deg, rgba(59, 91, 253, 0.22) 0%, rgba(24, 24, 24, 0.95) 100%);
+      box-shadow: 0 10px 28px -5px rgba(59, 91, 253, 0.35);
     }
+
     .mode-icon {
-      width: 46px; height: 46px; border-radius: 10px;
-      background: #0f172a; border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.35rem; flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: #242424;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, background 0.25s ease;
     }
-    .mode-card.active .mode-icon { background: var(--primary); border-color: var(--primary); }
-    .mode-info h3 { font-size: 1.05rem; margin: 0 0 4px 0; color: #fff; }
-    .mode-info p { font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.35; }
 
-    .dashboard-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
-    
-    .control-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 22px; border-radius: 12px; position: sticky; top: 20px; }
-    .preview-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; overflow: hidden; }
-    
+    .mode-card.active .mode-icon {
+      background: var(--grad-brand);
+      border-color: transparent;
+      transform: scale(1.06);
+      box-shadow: 0 6px 16px rgba(59, 91, 253, 0.45);
+    }
+
+    .mode-info h3 {
+      font-size: 1.08rem;
+      font-weight: 800;
+      margin: 0 0 4px 0;
+      color: #ffffff;
+    }
+
+    .mode-info p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* --- 5. LAYOUT DEL WORKSPACE --- */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+      .dashboard-layout {
+        grid-template-columns: 390px 1fr;
+      }
+    }
+
+    .control-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-soft);
+    }
+
+    @media (min-width: 1024px) {
+      .control-panel {
+        position: sticky;
+        top: 88px;
+      }
+    }
+
+    .preview-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
     .input-dark, .select-dark {
-      background: #0f172a; color: #fff; border: 1px solid var(--border);
-      padding: 8px 12px; border-radius: 6px; font-size: 0.86rem; width: 100%;
+      background: #242424;
+      color: #ffffff;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      width: 100%;
     }
 
+    /* Dropzone moderna con microinteracción */
     .file-drop-area {
-      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      width: 100%; height: 95px; margin-top: 6px; margin-bottom: 12px;
-      border: 2px dashed #334155; border-radius: 8px; background: #0f172a;
-      transition: 0.2s; text-align: center; color: var(--text-muted); padding: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 105px;
+      margin-top: 8px;
+      margin-bottom: 14px;
+      border: 2px dashed rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-md);
+      background: #202020;
+      transition: all 0.25s ease;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 12px;
     }
-    .file-drop-area:hover { border-color: var(--primary); background: #18223d; }
-    .file-msg { font-size: 0.79rem; margin-top: 5px; font-weight: 600; }
-    .file-input { position: absolute; left: 0; top: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
+
+    .file-drop-area:hover {
+      border-color: var(--accent-cyan);
+      background: #262626;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .file-msg {
+      font-size: 0.8rem;
+      margin-top: 6px;
+      font-weight: 700;
+    }
+
+    .file-input {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      cursor: pointer;
+      opacity: 0;
+    }
 
     .filter-option {
-      display: flex; align-items: center; gap: 10px;
-      background: #0f172a; border: 1px solid var(--border);
-      padding: 8px 12px; border-radius: 8px; margin-top: 7px;
-      font-size: 0.81rem; color: #cbd5e1; cursor: pointer; user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #222222;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
     }
-    .filter-option input { width: auto; margin: 0; cursor: pointer; }
+
+    .filter-option:hover {
+      background: #2a2a2a;
+      border-color: var(--border-hover);
+      transform: translateX(2px);
+    }
+
+    .filter-option input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
 
     .stats-bar {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin: 12px 0; text-align: center;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+      text-align: center;
     }
-    .stat-box { background: #0f172a; border: 1px solid var(--border); padding: 8px 4px; border-radius: 8px; }
-    .stat-box strong { display: block; font-size: 1.1rem; color: #34d399; }
-    .stat-box span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; }
 
-    .btn-generate {
-      background: var(--primary); color: #fff; font-weight: 700;
-      border: none; padding: 13px 16px; border-radius: 8px;
-      cursor: pointer; width: 100%; font-size: 0.95rem;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 16px; transition: 0.2s;
+    .stat-box {
+      background: #222222;
+      border: 1px solid var(--border);
+      padding: 10px 6px;
+      border-radius: var(--radius-sm);
     }
-    .btn-generate:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
-    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .stat-box strong {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--badge-green);
+    }
+
+    .stat-box span {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    /* Botones principales tipo píldora con microinteracciones */
+    .btn-generate {
+      background: var(--grad-brand);
+      color: #ffffff;
+      font-weight: 800;
+      border: none;
+      padding: 14px 20px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      width: 100%;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 18px;
+      box-shadow: 0 8px 22px rgba(59, 91, 253, 0.35);
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      transform: scale(1.02) translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow: 0 12px 28px rgba(59, 91, 253, 0.5);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
 
     .btn-excel-out {
-      background: #10b981; color: #052e16; font-weight: 700;
-      border: none; padding: 13px 16px; border-radius: 8px;
-      cursor: pointer; width: 100%; font-size: 0.95rem;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 16px; transition: 0.2s;
+      background: linear-gradient(90deg, #1ed760 0%, #10b981 100%);
+      color: #052e16;
+      font-weight: 800;
+      border: none;
+      padding: 14px 20px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      width: 100%;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 18px;
+      box-shadow: 0 8px 22px rgba(30, 215, 96, 0.28);
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, filter 0.2s ease;
     }
-    .btn-excel-out:hover:not(:disabled) { background: #34d399; transform: translateY(-1px); }
-    .btn-excel-out:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    .btn-excel-out:hover:not(:disabled) {
+      transform: scale(1.02) translateY(-1px);
+      filter: brightness(1.06);
+      box-shadow: 0 12px 28px rgba(30, 215, 96, 0.42);
+    }
+
+    .btn-excel-out:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* --- 6. CARRUSEL HORIZONTAL DE PESTAÑAS DE AUDITORÍA --- */
     .sheet-tabs {
-      display: flex; gap: 8px; border-bottom: 1px solid var(--border);
-      padding-bottom: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between;
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      align-items: center;
+      justify-content: space-between;
       flex-wrap: wrap;
     }
-    .tab-group { display: flex; gap: 8px; flex-wrap: wrap; }
-    .tab-btn {
-      background: #0f172a; color: var(--text-muted); border: 1px solid var(--border);
-      padding: 8px 14px; border-radius: 8px; font-size: 0.83rem; font-weight: 600;
-      cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px;
-    }
-    .tab-btn.active {
-      background: rgba(59, 91, 253, 0.15); color: #fff;
-      border-color: var(--primary);
-    }
-    .tab-badge {
-      background: #1e293b; color: #94a3b8; padding: 2px 7px;
-      border-radius: 10px; font-size: 0.72rem;
-    }
-    .tab-btn.active .tab-badge { background: var(--primary); color: #fff; }
 
+    .tab-group {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+      max-width: 100%;
+    }
+
+    .tab-btn {
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      background: #242424;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: #2e2e2e;
+      transform: translateY(-1px);
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #121212;
+      border-color: #ffffff;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-badge {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .tab-btn.active .tab-badge {
+      background: #121212;
+      color: #ffffff;
+    }
+
+    /* --- 7. TABLAS DE AUDITORÍA Y PREVIEW --- */
     .table-scroll {
-      width: 100%; overflow-x: auto; max-height: 72vh; overflow-y: auto;
-      border: 1px solid var(--border); border-radius: 8px; background: #0f172a;
+      width: 100%;
+      overflow-x: auto;
+      max-height: 70vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #141414;
     }
+
     .audit-table {
-      width: 100%; border-collapse: collapse; font-size: 0.82rem; color: var(--text-main);
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      color: var(--text-main);
     }
+
     .audit-table th {
-      background: #1e293b; color: #cbd5e1; font-weight: 700; padding: 10px 12px;
-      text-align: left; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 2;
-      font-size: 0.74rem; text-transform: uppercase;
+      background: #202020;
+      color: var(--text-muted);
+      font-weight: 800;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
+
     .audit-table td {
-      padding: 8px 12px; border-bottom: 1px solid #1e293b; color: #e2e8f0; vertical-align: middle;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      vertical-align: middle;
     }
-    .audit-table tr:hover td { background: #151f38; }
+
+    .audit-table tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .audit-table tr:hover td {
+      background: #222222;
+    }
 
     .row-header-repeat td {
-      background: #1e293b !important; color: #60a5fa !important;
-      font-weight: 700; font-size: 0.75rem; text-transform: uppercase;
-      border-top: 2px solid #334155 !important;
+      background: #e2e8f0 !important;
+      color: #0f172a !important;
+      font-weight: 800;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      border-top: 2px solid #94a3b8 !important;
+      text-align: center;
     }
+
     .row-blank-sep td {
-      background: #090d14 !important; color: #475569 !important;
-      font-size: 0.7rem; font-style: italic; text-align: center; padding: 4px !important;
+      background: #0d0d0d !important;
+      color: #525252 !important;
+      font-size: 0.7rem;
+      font-style: italic;
+      text-align: center;
+      padding: 5px !important;
+    }
+
+    .cell-excel-green {
+      background: #00ff00 !important;
+      color: #000000 !important;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .cell-excel-cyan {
+      background: #00ffff !important;
+      color: #000000 !important;
+      font-weight: 800;
+      text-align: center;
+      font-family: monospace;
     }
 
     .conn-thumb {
-      width: 34px; height: 34px; object-fit: contain; background: #fff;
-      border-radius: 6px; padding: 2px; border: 1px solid #334155; vertical-align: middle; margin-right: 6px;
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid var(--border);
+      vertical-align: middle;
+      margin-right: 8px;
     }
 
-    .badge-ok { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
-    .badge-part { background: rgba(59,91,253,0.18); color: #60a5fa; border: 1px solid rgba(59,91,253,0.35); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; font-family: monospace; display: inline-flex; align-items: center; }
-    .badge-warn { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
-    .badge-splice { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
+    .badge-ok { background: rgba(30,215,96,0.14); color: var(--badge-green); border: 1px solid rgba(30,215,96,0.3); padding: 3px 10px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; display: inline-block; }
+    .badge-part { background: rgba(59,91,253,0.18); color: #748ffc; border: 1px solid rgba(59,91,253,0.35); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; font-family: monospace; display: inline-flex; align-items: center; }
+    .badge-warn { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); padding: 3px 10px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; display: inline-block; }
+    .badge-splice { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 3px 10px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; display: inline-block; }
 
     .code-preview {
-      font-family: monospace; font-size: 0.78rem; color: #34d399;
-      padding: 16px; margin: 0; white-space: pre-wrap; word-break: break-all;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--badge-green);
+      padding: 18px;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
 
-    .empty-state { text-align: center; padding: 75px 20px; color: var(--text-muted); }
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--text-muted);
+    }
 
-    @media (max-width: 980px) {
-      .dashboard-layout { grid-template-columns: 1fr; }
-      .mode-switcher { grid-template-columns: 1fr; }
-      .control-panel { position: static; }
+    /* Animaciones progresivas al hacer scroll */
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      background: #0c0c0c;
+      padding: 24px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: auto;
     }
   </style>
 </head>
 <body>
 
-<div class="container" style="max-width: 1400px;">
-  <!-- ENCABEZADO -->
-  <div class="main-header">
-    <div class="header-brand">
-      <img src="logo-transparente.webp" alt="LoomTech" class="header-logo" onerror="this.style.display='none'">
-      <div class="header-title">
-        <h1>Conversor Bidireccional de Cableados (Excel &harr; .harness)</h1>
-        <p>Genera archivos CAD desde tu planilla o reconstruye la planilla Excel desde un archivo .harness</p>
+  <!-- BARRA DE NAVEGACIÓN FIJA CON GLASMORFISMO -->
+  <nav class="navbar-glass" id="mainNav">
+    <div class="nav-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-logo-wrap">
+          <img src="logo-transparente.webp" alt="LoomTech" onerror="this.style.display='none'">
+        </div>
+        <div>
+          <h1>LoomTech</h1>
+          <p>Ingeniería de Cableados & Pinouts</p>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-pill">Hub Principal</a>
+        <a href="facturador.html" class="nav-pill">Comprobantes</a>
+        <a href="gestor-compras.html" class="nav-pill">Gestor de Compras</a>
+        <a href="cableados.html" class="nav-pill active">Pinouts & Mazos</a>
       </div>
+
+      <a href="index.html" class="btn-secondary" style="text-decoration: none;">
+        &larr; Volver al Hub
+      </a>
     </div>
-    <a href="index.html" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Hub</a>
-  </div>
+  </nav>
 
-  <!-- SELECTOR DE MODO PRINCIPAL -->
-  <div class="mode-switcher">
-    <button type="button" class="mode-card active" id="btnModeE2H" onclick="setAppMode('excelToHarness')">
-      <div class="mode-icon">📊 &rarr; 🔌</div>
-      <div class="mode-info">
-        <h3>De Excel a .harness</h3>
-        <p>Convierte tu planilla de pinouts en un archivo <code>.harness</code> con fichas Deutsch, fotos visibles y distribución por largo.</p>
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-wrapper">
+
+    <!-- HERO CON DEGRADADO SUAVE Y TÍTULO INTERACTIVO -->
+    <section class="page-hero reveal-on-scroll" id="heroBanner">
+      <div>
+        <div class="hero-eyebrow">⚡ Harness Design &harr; Google Sheets / Excel</div>
+        <h2 class="interactive-title" id="interactiveTitle">Conversor Bidireccional de Mazos</h2>
+        <p class="hero-subtitle">
+          Transforma tus planillas de pinouts en proyectos CAD <code>.harness</code> con librería Deutsch integrada o reconstruye el Excel formateado desde tus diseños.
+        </p>
       </div>
-    </button>
+    </section>
 
-    <button type="button" class="mode-card" id="btnModeH2E" onclick="setAppMode('harnessToExcel')">
-      <div class="mode-icon">🔌 &rarr; 📊</div>
-      <div class="mode-info">
-        <h3>De .harness a Excel</h3>
-        <p>Convierte un archivo <code>.harness</code> en un Excel con el modelo exacto de tu planilla (Conector Principal + Hoja 2 apilada).</p>
-      </div>
-    </button>
-  </div>
-
-  <!-- ========================================================================
-       SECCIÓN 1: MODO "DE EXCEL A .HARNESS" (INTACTO)
-       ======================================================================== -->
-  <div id="sectionExcelToHarness" class="dashboard-layout">
-    
-    <!-- PANEL IZQUIERDO (EXCEL -> HARNESS) -->
-    <div class="control-panel">
-      <h2>1. Planilla Excel de Pinouts</h2>
-      <div class="file-drop-area">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:28px; height:28px; color:#34d399;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
-        </svg>
-        <span class="file-msg" id="excelMsg">Haz clic o arrastra tu Excel (.xlsx) aquí</span>
-        <input class="file-input" type="file" id="excelInput" accept=".xlsx, .xls" onchange="handleExcelFile(event)">
-      </div>
-
-      <div class="flex-between" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
-        <h3 style="font-size: 0.9rem;">2. Librería de Conectores</h3>
-        <span id="libBadge" class="badge-ok" style="font-size: 0.68rem;">12 Fichas Base Activas</span>
-      </div>
-      <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">
-        Incluye DT, DTM y DTP. Puedes subir tu archivo <code>.harnesslib</code> para guardar más fichas en el navegador.
-      </p>
-
-      <div class="file-drop-area" style="height: 64px; margin-bottom: 8px;">
-        <span class="file-msg" id="libMsg" style="color: #60a5fa;">Subir librería .harnesslib (Opcional)</span>
-        <input class="file-input" type="file" id="libInput" accept=".harnesslib, .harness, .json" onchange="handleLibraryFile(event)">
-      </div>
-
-      <div class="stats-bar" id="statsBar" style="display: none;">
-        <div class="stat-box"><strong id="statConnectors">0</strong><span>Conectores</span></div>
-        <div class="stat-box"><strong id="statWires">0</strong><span>Cables</span></div>
-        <div class="stat-box"><strong id="statSplices">0</strong><span>Uniones</span></div>
-      </div>
-
-      <h3 style="font-size: 0.9rem; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
-        3. Distribución y Visualización
-      </h3>
-
-      <div class="grid-2">
-        <div>
-          <label style="margin-top:4px;">Unidad col. "Largo"</label>
-          <select id="lengthUnitSelect" class="select-dark" onchange="rebuildHarness()">
-            <option value="cm" selected>Centímetros (cm)</option>
-            <option value="mm">Milímetros (mm)</option>
-          </select>
+    <!-- SELECTOR DE MODO (CARRUSEL EN MÓVIL / GRILLA EN DESKTOP) -->
+    <div class="mode-switcher reveal-on-scroll">
+      <button type="button" class="mode-card active" id="btnModeE2H" onclick="setAppMode('excelToHarness')">
+        <div class="mode-icon">📊 &rarr; 🔌</div>
+        <div class="mode-info">
+          <h3>De Excel a .harness</h3>
+          <p>Convierte tu planilla de pinouts en un archivo <code>.harness</code> (en cm) con fichas Deutsch, fotos visibles y distribución por largo.</p>
         </div>
-        <div>
-          <label style="margin-top:4px;">Escala Horizontal X</label>
-          <select id="scaleXSelect" class="select-dark" onchange="rebuildHarness()" title="Qué tan lejos se ubican los conectores en el eje X según su largo">
-            <option value="0.6">Compacta (0.6x)</option>
-            <option value="1" selected>Real 1:1 (1 mm = 1 px)</option>
-            <option value="1.5">Amplia (1.5x)</option>
-          </select>
+      </button>
+
+      <button type="button" class="mode-card" id="btnModeH2E" onclick="setAppMode('harnessToExcel')">
+        <div class="mode-icon">🔌 &rarr; 📊</div>
+        <div class="mode-info">
+          <h3>De .harness a Excel</h3>
+          <p>Convierte un archivo <code>.harness</code> (detectando nombres reales de terminales Ring) en un Excel con colores y ajuste original.</p>
         </div>
-      </div>
-
-      <label>Nombre del archivo de salida</label>
-      <input type="text" id="outHarnessName" class="input-dark" placeholder="Motor.Maxirally.Kaufmann.harness">
-
-      <label class="filter-option" title="Activa el bloque partImage y pinout para que la foto del conector sea visible directamente en el lienzo">
-        <input type="checkbox" id="chkShowPartImages" checked onchange="rebuildHarness()">
-        <span>Mostrar foto y pinout visible en los conectores</span>
-      </label>
-
-      <label class="filter-option" title="Si no se aclara Macho/Hembra en el Excel, asigna siempre la ficha Hembra (06-xS)">
-        <input type="checkbox" id="chkDefaultFemale" checked onchange="rebuildHarness()">
-        <span>Priorizar ficha Hembra (06-S) en DT / DTM / DTP</span>
-      </label>
-
-      <label class="filter-option">
-        <input type="checkbox" id="chkIncludeUnions" checked onchange="rebuildHarness()">
-        <span>Incluir nodos para "Uniones" (5V, 0V, GND, 12V)</span>
-      </label>
-
-      <button type="button" class="btn-generate" id="btnDownloadHarness" onclick="downloadHarnessFile()" disabled>
-        ⚡ Descargar Archivo .harness
       </button>
     </div>
 
-    <!-- PANEL DERECHO (EXCEL -> HARNESS) -->
-    <div class="preview-panel">
-      <div class="sheet-tabs">
-        <div class="tab-group">
-          <button type="button" class="tab-btn active" id="tabConnectors" onclick="switchView('connectors')">
-            🧩 Conectores, Fotos y Posición X <span class="tab-badge" id="badgeConnectors">0</span>
-          </button>
-          <button type="button" class="tab-btn" id="tabWires" onclick="switchView('wires')">
-            🔌 Cables Generados (Wires) <span class="tab-badge" id="badgeWires">0</span>
-          </button>
-          <button type="button" class="tab-btn" id="tabJson" onclick="switchView('json')">
-            { } JSON .harness
-          </button>
+    <!-- ========================================================================
+         SECCIÓN 1: MODO "DE EXCEL A .HARNESS"
+         ======================================================================== -->
+    <div id="sectionExcelToHarness" class="dashboard-layout reveal-on-scroll">
+      
+      <!-- PANEL IZQUIERDO (EXCEL -> HARNESS) -->
+      <div class="control-panel">
+        <h2>1. Planilla Excel de Pinouts</h2>
+        <div class="file-drop-area">
+          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:28px; height:28px; color:var(--badge-green);">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+          </svg>
+          <span class="file-msg" id="excelMsg">Haz clic o arrastra tu Excel (.xlsx) aquí</span>
+          <input class="file-input" type="file" id="excelInput" accept=".xlsx, .xls" onchange="handleExcelFile(event)">
+        </div>
+
+        <div class="flex-between" style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px;">
+          <h3 style="font-size: 0.92rem; margin: 0;">2. Librería de Conectores</h3>
+          <span id="libBadge" class="badge-ok" style="font-size: 0.68rem;">13 Fichas Base Activas</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+          Incluye DT, DTM, DTP y Terminal Ring. Puedes subir tu archivo <code>.harnesslib</code> para guardar más fichas.
+        </p>
+
+        <div class="file-drop-area" style="height: 68px; margin-bottom: 10px;">
+          <span class="file-msg" id="libMsg" style="color: var(--accent-cyan);">Subir librería .harnesslib (Opcional)</span>
+          <input class="file-input" type="file" id="libInput" accept=".harnesslib, .harness, .json" onchange="handleLibraryFile(event)">
+        </div>
+
+        <div class="stats-bar" id="statsBar" style="display: none;">
+          <div class="stat-box"><strong id="statConnectors">0</strong><span>Conectores</span></div>
+          <div class="stat-box"><strong id="statWires">0</strong><span>Cables</span></div>
+          <div class="stat-box"><strong id="statSplices">0</strong><span>Uniones</span></div>
+        </div>
+
+        <h3 style="font-size: 0.92rem; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;">
+          3. Distribución y Visualización
+        </h3>
+
+        <label style="margin-top:6px;">Separación Horizontal X (según Largo en cm)</label>
+        <select id="scaleXSelect" class="select-dark" onchange="rebuildHarness()" title="Escala visual para separar los conectores en el lienzo según los centímetros de largo">
+          <option value="6">Compacta (6 px por cm)</option>
+          <option value="10" selected>Estándar (10 px por cm)</option>
+          <option value="15">Amplia (15 px por cm)</option>
+        </select>
+
+        <label>Nombre del archivo de salida</label>
+        <input type="text" id="outHarnessName" class="input-dark" placeholder="Motor.Maxirally.Kaufmann.harness">
+
+        <label class="filter-option" title="Activa el bloque partImage y pinout para que la foto del conector sea visible directamente en el lienzo">
+          <input type="checkbox" id="chkShowPartImages" checked onchange="rebuildHarness()">
+          <span>Mostrar foto y pinout visible en los conectores</span>
+        </label>
+
+        <label class="filter-option" title="Si no se aclara Macho/Hembra en el Excel, asigna siempre la ficha Hembra (06-xS)">
+          <input type="checkbox" id="chkDefaultFemale" checked onchange="rebuildHarness()">
+          <span>Priorizar ficha Hembra (06-S) en DT / DTM / DTP</span>
+        </label>
+
+        <label class="filter-option">
+          <input type="checkbox" id="chkIncludeUnions" checked onchange="rebuildHarness()">
+          <span>Incluir nodos para "Uniones" (5V, 0V, GND, 12V)</span>
+        </label>
+
+        <button type="button" class="btn-generate" id="btnDownloadHarness" onclick="downloadHarnessFile()" disabled>
+          ⚡ Descargar Archivo .harness
+        </button>
+      </div>
+
+      <!-- PANEL DERECHO (EXCEL -> HARNESS) -->
+      <div class="preview-panel">
+        <div class="sheet-tabs">
+          <div class="tab-group">
+            <button type="button" class="tab-btn active" id="tabConnectors" onclick="switchView('connectors')">
+              🧩 Conectores, Fotos y Posición X <span class="tab-badge" id="badgeConnectors">0</span>
+            </button>
+            <button type="button" class="tab-btn" id="tabWires" onclick="switchView('wires')">
+              🔌 Cables Generados (Wires) <span class="tab-badge" id="badgeWires">0</span>
+            </button>
+            <button type="button" class="tab-btn" id="tabJson" onclick="switchView('json')">
+              { } JSON .harness
+            </button>
+          </div>
+        </div>
+
+        <div id="viewContainer" class="table-scroll">
+          <div class="empty-state">
+            <h3 style="color: #ffffff; margin-bottom: 8px;">Sube tu Excel de Pinouts en el panel izquierdo</h3>
+            <p style="font-size: 0.88rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
+              Los conectores quedarán libres y se distribuirán horizontalmente hacia la derecha partiendo desde el conector principal (<strong>Link Firewall Engine</strong>) tomando directamente los <strong>centímetros (cm)</strong> de la columna <strong>Largo</strong>.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div id="viewContainer" class="table-scroll">
-        <div class="empty-state">
-          <h3 style="color: #cbd5e1; margin-bottom: 8px;">Sube tu Excel de Pinouts en el panel izquierdo</h3>
-          <p style="font-size: 0.86rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
-            Los conectores quedarán libres (sin ramales forzados) y se distribuirán horizontalmente hacia la derecha partiendo desde el conector principal (<strong>Link Firewall Engine</strong>) según la distancia en centímetros de la columna <strong>Largo</strong>.
-          </p>
-        </div>
-      </div>
     </div>
 
-  </div>
+    <!-- ========================================================================
+         SECCIÓN 2: MODO INVERSO "DE .HARNESS A EXCEL"
+         ======================================================================== -->
+    <div id="sectionHarnessToExcel" class="dashboard-layout" style="display: none;">
+      
+      <!-- PANEL IZQUIERDO (HARNESS -> EXCEL) -->
+      <div class="control-panel">
+        <h2>1. Cargar Archivo .harness</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+          Sube tu archivo <strong>.harness</strong>. Lee los largos directos en <strong>cm</strong> y extrae el nombre real de todos los terminales.
+        </p>
 
-  <!-- ========================================================================
-       SECCIÓN 2: MODO INVERSO "DE .HARNESS A EXCEL" (MISMO MODELO DE ENTRADA)
-       ======================================================================== -->
-  <div id="sectionHarnessToExcel" class="dashboard-layout" style="display: none;">
-    
-    <!-- PANEL IZQUIERDO (HARNESS -> EXCEL) -->
-    <div class="control-panel">
-      <h2>1. Cargar Archivo .harness</h2>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-        Sube tu archivo <strong>.harness</strong> para reconstruir el Excel con el formato exacto de tu planilla manual.
-      </p>
-
-      <div class="file-drop-area">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:28px; height:28px; color:#60a5fa;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
-        </svg>
-        <span class="file-msg" id="h2eFileMsg">Haz clic o arrastra tu archivo .harness aquí</span>
-        <input class="file-input" type="file" id="h2eFileInput" accept=".harness, .json" onchange="handleH2EFileUpload(event)">
-      </div>
-
-      <div class="stats-bar" id="h2eStatsBar" style="display: none;">
-        <div class="stat-box"><strong id="h2eStatConns">0</strong><span>Conectores</span></div>
-        <div class="stat-box"><strong id="h2eStatWires">0</strong><span>Cables</span></div>
-        <div class="stat-box"><strong id="h2eStatBundles">0</strong><span>Tramos</span></div>
-      </div>
-
-      <h3 style="font-size: 0.9rem; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
-        2. Opciones de la Planilla Excel
-      </h3>
-
-      <label>Conector Principal (Hoja 1)</label>
-      <select id="h2eMainConnSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
-        <option value="auto">Automático (El de mayor cantidad de pines)</option>
-      </select>
-
-      <div class="grid-2">
-        <div>
-          <label>Unidad col. "Largo"</label>
-          <select id="h2eLengthUnitSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
-            <option value="cm" selected>Centímetros (cm)</option>
-            <option value="mm">Milímetros (mm)</option>
-          </select>
+        <div class="file-drop-area">
+          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:28px; height:28px; color:var(--accent-cyan);">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+          </svg>
+          <span class="file-msg" id="h2eFileMsg">Haz clic o arrastra tu archivo .harness aquí</span>
+          <input class="file-input" type="file" id="h2eFileInput" accept=".harness, .json" onchange="handleH2EFileUpload(event)">
         </div>
-        <div>
-          <label>Idioma de Colores</label>
-          <select id="h2eColorLangSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
-            <option value="es" selected>Español (Blanco, Rojo...)</option>
-            <option value="en">Inglés (White, Red...)</option>
-          </select>
+
+        <div class="stats-bar" id="h2eStatsBar" style="display: none;">
+          <div class="stat-box"><strong id="h2eStatConns">0</strong><span>Fichas / Ring</span></div>
+          <div class="stat-box"><strong id="h2eStatWires">0</strong><span>Cables</span></div>
+          <div class="stat-box"><strong id="h2eStatBundles">0</strong><span>Tramos</span></div>
+        </div>
+
+        <h3 style="font-size: 0.92rem; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;">
+          2. Opciones de la Planilla Excel
+        </h3>
+
+        <label>Conector Principal (Hoja 1)</label>
+        <select id="h2eMainConnSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
+          <option value="auto">Automático (El de mayor cantidad de pines)</option>
+        </select>
+
+        <label>Idioma de Colores</label>
+        <select id="h2eColorLangSelect" class="select-dark" onchange="rebuildExcelFromHarness()">
+          <option value="es" selected>Español (Blanco, Rojo...)</option>
+          <option value="en">Inglés (White, Red...)</option>
+        </select>
+
+        <label>Nombre del archivo Excel a descargar</label>
+        <input type="text" id="h2eOutFileName" class="input-dark" placeholder="Motor MaxiRally Kaufmann.xlsx">
+
+        <label class="filter-option" title="Dejar la Columna A vacía y la Fila 1 en blanco como margen, igual que en tu planilla original">
+          <input type="checkbox" id="chkH2EEmptyColA" checked onchange="rebuildExcelFromHarness()">
+          <span>Respetar margen original (Columna A y Fila 1)</span>
+        </label>
+
+        <label class="filter-option" title="Oculta en la Hoja 2 los conectores que todavía no tengan ningún cable conectado">
+          <input type="checkbox" id="chkH2EHideEmptyConns" onchange="rebuildExcelFromHarness()">
+          <span>Omitir conectores sin cables conectados</span>
+        </label>
+
+        <button type="button" class="btn-excel-out" id="btnDownloadH2E" onclick="downloadExcelFromHarness()" disabled>
+          📥 Descargar Excel (.xlsx) Formateado
+        </button>
+      </div>
+
+      <!-- PANEL DERECHO (HARNESS -> EXCEL) -->
+      <div class="preview-panel">
+        <div class="sheet-tabs">
+          <div class="tab-group">
+            <button type="button" class="tab-btn active" id="tabH2ESheet1" onclick="switchH2ETab('sheet1')">
+              📋 Hoja 1: <span id="lblH2ESheet1Name">Conector Principal</span> <span class="tab-badge" id="badgeH2ESheet1">0 pines</span>
+            </button>
+            <button type="button" class="tab-btn" id="tabH2ESheet2" onclick="switchH2ETab('sheet2')">
+              📑 Hoja 2: Periféricos + Terminales Ring <span class="tab-badge" id="badgeH2ESheet2">0 bloques</span>
+            </button>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--badge-green); font-weight: 700;">
+            ✔ Largos directos en cm | Nombres reales de Terminales | Ajuste de Texto (Wrap)
+          </span>
+        </div>
+
+        <div id="h2ePreviewContainer" class="table-scroll">
+          <div class="empty-state">
+            <h3 style="color: #ffffff; margin-bottom: 8px;">Sube tu archivo .harness en el panel izquierdo</h3>
+            <p style="font-size: 0.88rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
+              El conversor generará el archivo <strong>.xlsx</strong> respetando los colores de fondo de tu planilla original (encabezados grises <code>#F2F2F2</code>, pines principales en cian <code>#00FFFF</code>, conectores periféricos en verde <code>#00FF00</code>), celdas combinadas verticalmente y regla de texto en <strong>Ajuste (Wrap Text)</strong>.
+            </p>
+          </div>
         </div>
       </div>
 
-      <label>Nombre del archivo Excel a descargar</label>
-      <input type="text" id="h2eOutFileName" class="input-dark" placeholder="Motor MaxiRally Kaufmann.xlsx">
-
-      <label class="filter-option" title="Dejar la Columna A vacía como margen izquierdo, igual que en tu planilla original">
-        <input type="checkbox" id="chkH2EEmptyColA" checked onchange="rebuildExcelFromHarness()">
-        <span>Respetar Columna A vacía de margen (Modelo Original)</span>
-      </label>
-
-      <label class="filter-option" title="Oculta en la Hoja 2 los conectores que todavía no tengan ningún cable conectado">
-        <input type="checkbox" id="chkH2EHideEmptyConns" onchange="rebuildExcelFromHarness()">
-        <span>Omitir conectores sin cables conectados</span>
-      </label>
-
-      <button type="button" class="btn-excel-out" id="btnDownloadH2E" onclick="downloadExcelFromHarness()" disabled>
-        📥 Descargar Excel (.xlsx) con Formato de Entrada
-      </button>
     </div>
 
-    <!-- PANEL DERECHO (HARNESS -> EXCEL) -->
-    <div class="preview-panel">
-      <div class="sheet-tabs">
-        <div class="tab-group">
-          <button type="button" class="tab-btn active" id="tabH2ESheet1" onclick="switchH2ETab('sheet1')">
-            📋 Hoja 1: <span id="lblH2ESheet1Name">Conector Principal</span> <span class="tab-badge" id="badgeH2ESheet1">0 filas</span>
-          </button>
-          <button type="button" class="tab-btn" id="tabH2ESheet2" onclick="switchH2ETab('sheet2')">
-            📑 Hoja 2: Periféricos Apilados <span class="tab-badge" id="badgeH2ESheet2">0 bloques</span>
-          </button>
-        </div>
-        <span style="font-size: 0.76rem; color: var(--text-muted);">
-          Columnas: Nombre | Conector | Pin | Descripcion | Conductor | Color | Largo | Termina en | Pin | Asignacion
-        </span>
-      </div>
+  </main>
 
-      <div id="h2ePreviewContainer" class="table-scroll">
-        <div class="empty-state">
-          <h3 style="color: #cbd5e1; margin-bottom: 8px;">Sube tu archivo .harness en el panel izquierdo</h3>
-          <p style="font-size: 0.86rem; max-width: 560px; margin: 0 auto; line-height: 1.55;">
-            El conversor generará un archivo <strong>.xlsx</strong> idéntico a tu modelo de entrada: la <strong>Hoja 1</strong> con la ficha principal (ej. <em>Link Firewall Engine</em>) y la <strong>Hoja 2</strong> con todos los sensores/actuadores uno debajo del otro separados por una fila en blanco y con su encabezado repetido.
-          </p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-</div>
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; LoomTech Motorsport — Electrónica y Servicios de Competición. Córdoba, Argentina.</p>
+  </footer>
 
 <script>
+  // =========================================================================
+  // INTERACCIONES VISUALES (NAVBAR SCROLL, HERO GLOW, REVEAL ON SCROLL)
+  // =========================================================================
+  const mainNav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 16) mainNav.classList.add('scrolled');
+    else mainNav.classList.remove('scrolled');
+  }, { passive: true });
+
+  const heroBanner = document.getElementById('heroBanner');
+  const interactiveTitle = document.getElementById('interactiveTitle');
+  if (heroBanner && interactiveTitle) {
+    heroBanner.addEventListener('mousemove', (e) => {
+      const rect = heroBanner.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      heroBanner.style.setProperty('--hero-x', `${x}%`);
+      heroBanner.style.setProperty('--hero-y', `${y}%`);
+      interactiveTitle.style.setProperty('--title-angle', `${70 + (x * 0.5)}deg`);
+    });
+  }
+
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+      card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+    });
+  });
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, idx) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('is-visible'), idx * 60);
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObserver.observe(el));
+
   // =========================================================================
   // CAMBIO DE MODO EN LA INTERFAZ
   // =========================================================================
@@ -438,9 +1033,15 @@
   }
 
   // =========================================================================
-  // 1. CATÁLOGO INTEGRADO DE FICHAS DEUTSCH (DT, DTM, DTP - HEMBRA Y MACHO)
+  // 1. CATÁLOGO INTEGRADO DE FICHAS DEUTSCH + TERMINAL RING (1 VÍA)
   // =========================================================================
   const BUILTIN_DEUTSCH_PARTS = [
+    {
+      "id": "Di4QyN_RAgRUaeS3r1fk3",
+      "partNumber": "Ring Terminal",
+      "description": "Terminal Ojal / Ring Terminal (1 vía)",
+      "numberOfCavities": 1
+    },
     {
       "id": "evz0YJ9-wX1SHOpZ72TSk",
       "partNumber": "DTM06-2S",
@@ -824,7 +1425,7 @@
   let auditWiresList = [];
   let currentView = 'connectors';
 
-  window.onload = function() {
+  window.addEventListener('DOMContentLoaded', () => {
     const savedLib = localStorage.getItem('loomtech_custom_parts_lib');
     if (savedLib) {
       try {
@@ -834,13 +1435,20 @@
         document.getElementById('libMsg').innerText = `Librería personalizada activa (${activePartsCatalog.length} fichas)`;
       } catch (e) { console.error(e); }
     }
-  };
+  });
 
   function mergePartsIntoCatalog(partsArray) {
     if (!Array.isArray(partsArray)) return;
     partsArray.forEach(p => {
-      if (!p || !p.partNumber) return;
-      const idx = activePartsCatalog.findIndex(existing => existing.partNumber.toUpperCase() === p.partNumber.toUpperCase());
+      if (!p) return;
+      if (p.id && !p.partNumber && p.numberOfCavities === 1) {
+        p.partNumber = "Ring Terminal";
+        p.description = "Terminal Ojal / Ring (1 vía)";
+      }
+      const idx = activePartsCatalog.findIndex(existing =>
+        (p.id && existing.id === p.id) ||
+        (p.partNumber && existing.partNumber && existing.partNumber.toUpperCase() === p.partNumber.toUpperCase())
+      );
       if (idx !== -1) {
         activePartsCatalog[idx] = p;
       } else {
@@ -863,7 +1471,7 @@
           localStorage.setItem('loomtech_custom_parts_lib', JSON.stringify(activePartsCatalog));
           document.getElementById('libBadge').innerText = `${activePartsCatalog.length} Fichas Activas`;
           document.getElementById('libMsg').innerText = `¡Librería actualizada! (${activePartsCatalog.length} modelos)`;
-          document.getElementById('libMsg').style.color = '#34d399';
+          document.getElementById('libMsg').style.color = '#1ed760';
           if (rawExcelWorkbook) rebuildHarness();
         } else {
           alert("El archivo no contiene una lista 'connectorParts' válida.");
@@ -879,6 +1487,10 @@
     if (!rawConectorText) return null;
     const text = String(rawConectorText).trim();
     const upper = text.toUpperCase();
+
+    if (/RING|OJAL|TERMINAL|BATERIA|MASA|CHASIS/.test(upper) && minPinsRequired <= 1) {
+      return activePartsCatalog.find(p => p.id === 'Di4QyN_RAgRUaeS3r1fk3' || p.numberOfCavities === 1) || null;
+    }
 
     let series = null;
     if (/\bDTM/.test(upper)) series = 'DTM';
@@ -1008,12 +1620,12 @@
     return res;
   }
 
-  function parseLengthToMm(rawVal, unitMode) {
+  function parseLengthDirectCm(rawVal) {
     if (rawVal === null || rawVal === undefined || String(rawVal).trim() === '') return null;
     const cleaned = String(rawVal).replace(',', '.').replace(/[^0-9.]/g, '');
     const num = parseFloat(cleaned);
     if (isNaN(num) || num <= 0) return null;
-    return unitMode === 'cm' ? Math.round(num * 10) : Math.round(num);
+    return Number(num.toFixed(1));
   }
 
   function handleExcelFile(event) {
@@ -1022,7 +1634,7 @@
 
     const msg = document.getElementById('excelMsg');
     msg.innerText = `Excel cargado: ${file.name}`;
-    msg.style.color = '#34d399';
+    msg.style.color = '#1ed760';
 
     const baseName = file.name.replace(/\.xlsx?$/i, '').replace(/\s+/g, '.');
     document.getElementById('outHarnessName').value = `${baseName}.harness`;
@@ -1037,7 +1649,7 @@
   }
 
   // =========================================================================
-  // MOTOR 1: DE EXCEL A .HARNESS (INTACTO)
+  // MOTOR 1: DE EXCEL A .HARNESS (DIRECTO EN CM)
   // =========================================================================
   function rebuildHarness() {
     if (!rawExcelWorkbook) return;
@@ -1045,8 +1657,7 @@
     usedIds.clear();
     const includeUnions = document.getElementById('chkIncludeUnions').checked;
     const showPartImages = document.getElementById('chkShowPartImages').checked;
-    const unitMode = document.getElementById('lengthUnitSelect').value;
-    const scaleX = parseFloat(document.getElementById('scaleXSelect').value) || 1;
+    const pxPerCm = parseFloat(document.getElementById('scaleXSelect').value) || 10;
 
     const connectorsMap = new Map();
     const rawConnections = [];
@@ -1064,7 +1675,7 @@
           connectorType: rawType || '',
           pinsOrder: [],
           pinToCavId: new Map(),
-          lengthsMm: []
+          lengthsCm: []
         });
       } else if (rawType && !connectorsMap.get(normName).connectorType) {
         connectorsMap.get(normName).connectorType = rawType;
@@ -1084,6 +1695,7 @@
     }
 
     rawExcelWorkbook.SheetNames.forEach(sheetName => {
+      if (sheetName === '_HarnessMeta') return;
       const sheet = rawExcelWorkbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
@@ -1129,9 +1741,9 @@
 
         if (!currentConn) continue;
 
-        const parsedMm = parseLengthToMm(cellLargoRaw, unitMode);
-        if (parsedMm) {
-          currentConn.lengthsMm.push(parsedMm);
+        const parsedCm = parseLengthDirectCm(cellLargoRaw);
+        if (parsedCm) {
+          currentConn.lengthsCm.push(parsedCm);
         }
 
         if ((!cellPinOrig || cellPinOrig === '-') && (cellDesc || cellDestRaw)) {
@@ -1151,7 +1763,7 @@
 
           const targetConn = getOrCreateConnector(cellDestRaw, '');
           if (targetConn) {
-            if (parsedMm) targetConn.lengthsMm.push(parsedMm);
+            if (parsedCm) targetConn.lengthsCm.push(parsedCm);
             if (cellPinDest && cellPinDest !== '-') {
               registerPin(targetConn, cellPinDest);
             }
@@ -1163,7 +1775,7 @@
               desc: cellDesc,
               awg: cellAwg,
               colorRaw: cellColor,
-              lengthMm: parsedMm
+              lengthCm: parsedCm
             });
           }
         }
@@ -1208,7 +1820,7 @@
           desc: connA.desc || connB.desc,
           awg: connA.awg || connB.awg,
           colorRaw: chosenColor,
-          lengthMm: connA.lengthMm || connB.lengthMm,
+          lengthCm: connA.lengthCm || connB.lengthCm,
           status: 'Conciliado (Ida y Vuelta)'
         });
       }
@@ -1231,7 +1843,7 @@
         desc: conn.desc,
         awg: conn.awg,
         colorRaw: conn.colorRaw,
-        lengthMm: conn.lengthMm,
+        lengthCm: conn.lengthCm,
         status: conn.toPin ? 'Directo Completo' : 'Pin Auto-Asignado'
       });
     });
@@ -1287,14 +1899,14 @@
       connData.harnessId = genId();
 
       if (connData === mainHubConn) {
-        connData.distanceFromMainMm = 0;
+        connData.distanceFromMainCm = 0;
         connData.hasExplicitLength = true;
-      } else if (connData.lengthsMm.length > 0) {
-        const sum = connData.lengthsMm.reduce((a, b) => a + b, 0);
-        connData.distanceFromMainMm = Math.round(sum / connData.lengthsMm.length);
+      } else if (connData.lengthsCm.length > 0) {
+        const sum = connData.lengthsCm.reduce((a, b) => a + b, 0);
+        connData.distanceFromMainCm = Number((sum / connData.lengthsCm.length).toFixed(1));
         connData.hasExplicitLength = true;
       } else {
-        connData.distanceFromMainMm = null;
+        connData.distanceFromMainCm = null;
         connData.hasExplicitLength = false;
       }
     });
@@ -1316,7 +1928,7 @@
       };
       if (mainHubConn.matchedPart) {
         mainJson.partId = mainHubConn.matchedPart.id;
-        if (showPartImages) {
+        if (showPartImages && mainHubConn.matchedPart.image) {
           mainJson.partImage = { schematic: { size: 140, position: { x: MAIN_X, y: MAIN_Y - 150 } } };
           mainJson.pinout = { schematic: { width: 90, height: 90, position: { x: MAIN_X, y: MAIN_Y + 120 } } };
         }
@@ -1327,7 +1939,7 @@
     const peripheralConnectors = allConnectorsArray.filter(c => c !== mainHubConn);
 
     peripheralConnectors.sort((a, b) => {
-      if (a.hasExplicitLength && b.hasExplicitLength) return a.distanceFromMainMm - b.distanceFromMainMm;
+      if (a.hasExplicitLength && b.hasExplicitLength) return a.distanceFromMainCm - b.distanceFromMainCm;
       if (a.hasExplicitLength) return -1;
       if (b.hasExplicitLength) return 1;
       return 0;
@@ -1339,7 +1951,7 @@
     peripheralConnectors.forEach(connData => {
       let targetX;
       if (connData.hasExplicitLength) {
-        const rawX = MAIN_X + Math.max(240, Math.round(connData.distanceFromMainMm * scaleX));
+        const rawX = MAIN_X + Math.max(240, Math.round(connData.distanceFromMainCm * pxPerCm));
         targetX = Math.round(rawX / 60) * 60;
       } else {
         const col = Math.floor(fallbackIndex / 5);
@@ -1367,7 +1979,7 @@
 
       if (connData.matchedPart) {
         connJson.partId = connData.matchedPart.id;
-        if (showPartImages) {
+        if (showPartImages && connData.matchedPart.image) {
           connJson.partImage = {
             schematic: {
               size: 120,
@@ -1428,7 +2040,7 @@
       "$schema": "https://docs.harness.design/files/harness/schema/v1.2.json",
       "$docs": "https://docs.harness.design/files/harness/editing-guide.md",
       "version": 1.2,
-      "lengthUnit": "mm",
+      "lengthUnit": "cm",
       "wires": harnessWires,
       "connectors": finalHarnessConnectors,
       "bundles": [],
@@ -1472,7 +2084,7 @@
               <th>Declarado en Excel</th>
               <th>Ficha Asignada + Vista Previa</th>
               <th>Vías</th>
-              <th>Distancia desde Principal</th>
+              <th>Distancia (cm)</th>
               <th>Posición Layout (X, Y)</th>
             </tr>
           </thead>
@@ -1480,22 +2092,22 @@
       `;
 
       auditConnectorsList.forEach((c, idx) => {
-        let partCell = `<span style="color:#64748b;">Genérico</span>`;
+        let partCell = `<span style="color:var(--text-muted);">Genérico</span>`;
         if (c.isUnion) {
           partCell = `<span class="badge-splice">Nodo de Unión / Empalme</span>`;
         } else if (c.matchedPart) {
           const imgUrl = c.matchedPart.image?.lowResUrl || c.matchedPart.image?.url || '';
           const imgHtml = imgUrl ? `<img src="${imgUrl}" class="conn-thumb" alt="${c.matchedPart.partNumber}" onerror="this.style.display='none'">` : '';
-          partCell = `${imgHtml}<span class="badge-part">${c.matchedPart.partNumber} (${c.matchedPart.gender === 'Female' ? 'Hembra' : 'Macho'})</span>`;
+          partCell = `${imgHtml}<span class="badge-part">${c.matchedPart.partNumber} ${c.matchedPart.gender ? `(${c.matchedPart.gender === 'Female' ? 'Hembra' : 'Macho'})` : ''}</span>`;
         }
 
         let distBadge = '';
         if (idx === 0) {
-          distBadge = `<span class="badge-ok">0 mm (Ficha Principal / Origen)</span>`;
+          distBadge = `<span class="badge-ok">0 cm (Ficha Principal / Origen)</span>`;
         } else if (c.hasExplicitLength) {
-          distBadge = `<span class="badge-ok">${c.distanceFromMainMm} mm (${(c.distanceFromMainMm / 10).toFixed(1)} cm)</span>`;
+          distBadge = `<span class="badge-ok">${c.distanceFromMainCm} cm</span>`;
         } else {
-          distBadge = `<span style="color:#64748b;">Sin largo cargado (Auto-grilla)</span>`;
+          distBadge = `<span style="color:var(--text-muted);">Sin largo cargado (Auto-grilla)</span>`;
         }
 
         html += `
@@ -1503,9 +2115,9 @@
             <td><strong style="color:#fff;">${c.label}</strong></td>
             <td style="color:#cbd5e1;">${c.connectorType || '-'}</td>
             <td>${partCell}</td>
-            <td style="font-weight:700; color:#34d399;">${c.pinsOrder.length}</td>
+            <td style="font-weight:800; color:var(--badge-green);">${c.pinsOrder.length}</td>
             <td>${distBadge}</td>
-            <td style="font-family:monospace; color:#94a3b8;">X: <strong style="color:#fff;">${c.posX}</strong> | Y: ${c.posY}</td>
+            <td style="font-family:monospace; color:var(--text-muted);">X: <strong style="color:#fff;">${c.posX}</strong> | Y: ${c.posY}</td>
           </tr>
         `;
       });
@@ -1534,11 +2146,11 @@
         const badgeClass = w.status.includes('Conciliado') ? 'badge-ok' : (w.status.includes('Auto') ? 'badge-warn' : 'badge-ok');
         html += `
           <tr>
-            <td style="color:#64748b; font-family:monospace;">W${idx + 1}</td>
-            <td><strong style="color:#fff;">${w.fromConn}</strong> <span style="color:#38bdf8; font-weight:700;">[Pin ${w.fromPin}]</span></td>
-            <td><strong style="color:#fff;">${w.toConn}</strong> <span style="color:#34d399; font-weight:700;">[Pin ${w.toPin}]</span></td>
+            <td style="color:var(--text-muted); font-family:monospace;">W${idx + 1}</td>
+            <td><strong style="color:#fff;">${w.fromConn}</strong> <span style="color:var(--accent-cyan); font-weight:700;">[Pin ${w.fromPin}]</span></td>
+            <td><strong style="color:#fff;">${w.toConn}</strong> <span style="color:var(--badge-green); font-weight:700;">[Pin ${w.toPin}]</span></td>
             <td style="color:#cbd5e1;">${w.desc || '-'}</td>
-            <td style="font-family:monospace; color:#94a3b8;">${w.awg || '-'}</td>
+            <td style="font-family:monospace; color:var(--text-muted);">${w.awg || '-'}</td>
             <td><strong>${w.color}</strong></td>
             <td><span class="${badgeClass}">${w.status}</span></td>
           </tr>
@@ -1568,11 +2180,11 @@
   }
 
   // =========================================================================
-  // MOTOR 2: DE .HARNESS A EXCEL (MISMO MODELO EXACTO QUE EL DE ENTRADA)
+  // MOTOR 2: DE .HARNESS A EXCEL (SIN CONVERSIÓN DE UNIDADES + BUSCADOR PROFUNDO DE NOMBRES)
   // =========================================================================
   let loadedHarnessForExcel = null;
-  let h2eSheet1AOA = [];
-  let h2eSheet2AOA = [];
+  let h2eSheet1Data = { aoa: [], merges: [], rowMeta: [] };
+  let h2eSheet2Data = { aoa: [], merges: [], rowMeta: [] };
   let h2eMainSheetName = 'Link Firewall';
   let currentH2ETab = 'sheet1';
 
@@ -1603,25 +2215,38 @@
     return c1;
   }
 
-  // Convierte el partId del .harness a texto amigable estilo "DTM 3 Vias" o "DT 2 Vias"
-  function formatPartNameForExcel(partObj, fallbackCavitiesCount) {
-    if (!partObj) return '';
-    const pn = (partObj.partNumber || '').toUpperCase();
-    const match = pn.match(/^(DTM|DTP|DT)0([46])-(\d{1,2})[SP]/);
-    if (match) {
-      const series = match[1];
-      const isMale = match[2] === '4';
-      const ways = match[3];
-      return `${series} ${ways} Vias${isMale ? ' Macho' : ''}`;
+  function formatPartNameForExcel(partObj, connLabel, fallbackCavitiesCount, isRingFlag) {
+    const lblUpper = String(connLabel || '').toUpperCase();
+    if (isRingFlag) return 'Terminal Ring';
+
+    if (partObj) {
+      if (partObj.id === 'Di4QyN_RAgRUaeS3r1fk3' || (partObj.numberOfCavities === 1 && !partObj.partNumber)) {
+        return 'Terminal Ring';
+      }
+      const pn = (partObj.partNumber || '').toUpperCase();
+      if (pn.includes('RING') || pn.includes('OJAL')) return 'Terminal Ring';
+
+      const match = pn.match(/^(DTM|DTP|DT)0([46])-(\d{1,2})[SP]/);
+      if (match) {
+        const series = match[1];
+        const isMale = match[2] === '4';
+        const ways = match[3];
+        return `${series} ${ways} Vias${isMale ? ' Macho' : ''}`;
+      }
+      if (partObj.pinout && partObj.pinout.name) {
+        return partObj.pinout.name.replace('-way', ' Vias');
+      }
+      if (partObj.partNumber) return partObj.partNumber;
     }
-    if (partObj.pinout && partObj.pinout.name) {
-      return partObj.pinout.name.replace('-way', ' Vias');
+
+    if (lblUpper.startsWith('UNION')) return '-';
+    if (fallbackCavitiesCount === 1 || /\b(RING|OJAL|BATERIA|MASA|GND|POSITIVO|\+)\b/i.test(lblUpper)) {
+      return 'Terminal Ring';
     }
-    return partObj.partNumber || `${fallbackCavitiesCount} Vias`;
+    return fallbackCavitiesCount > 0 ? `${fallbackCavitiesCount} Vias` : 'Original';
   }
 
-  // Calcula la distancia en mm entre dos conectores recorriendo los bundles y branchPoints del .harness (BFS)
-  function computeBundlePathLengthMm(harnessData, connIdA, connIdB) {
+  function computeBundlePathLengthDirect(harnessData, connIdA, connIdB) {
     if (!harnessData.bundles || harnessData.bundles.length === 0 || !connIdA || !connIdB) return null;
     if (connIdA === connIdB) return 0;
 
@@ -1645,7 +2270,7 @@
 
     while (queue.length > 0) {
       const curr = queue.shift();
-      if (curr.node === connIdB) return curr.dist;
+      if (curr.node === connIdB) return Number(curr.dist.toFixed(1));
 
       const neighbors = adj.get(curr.node) || [];
       for (const nb of neighbors) {
@@ -1658,13 +2283,192 @@
     return null;
   }
 
+  function resolveHumanLabel(item, globalLabelDictionary, partsById) {
+    if (!item) return '';
+    const candidateKeys = ['label', 'name', 'title', 'text', 'designation', 'displayName', 'reference', 'identifier', 'tag', 'description', 'notes'];
+    for (const k of candidateKeys) {
+      if (typeof item[k] === 'string' && item[k].trim() !== '' && item[k].trim() !== item.id) {
+        return item[k].trim();
+      }
+      if (item[k] && typeof item[k] === 'object') {
+        const subText = item[k].text || item[k].value || item[k].label || item[k].name;
+        if (typeof subText === 'string' && subText.trim() !== '' && subText.trim() !== item.id) {
+          return subText.trim();
+        }
+      }
+    }
+
+    const nestedContainers = ['data', 'properties', 'meta', 'attributes', 'schematic', 'layout', 'settings'];
+    for (const box of nestedContainers) {
+      if (item[box] && typeof item[box] === 'object') {
+        for (const k of candidateKeys) {
+          const val = item[box][k];
+          if (typeof val === 'string' && val.trim() !== '' && val.trim() !== item.id) {
+            return val.trim();
+          }
+        }
+      }
+    }
+
+    if (Array.isArray(item.cavities) && item.cavities.length === 1) {
+      const cav = item.cavities[0];
+      for (const k of candidateKeys) {
+        if (typeof cav[k] === 'string' && cav[k].trim() !== '' && cav[k].trim() !== cav.id && isNaN(Number(cav[k]))) {
+          return cav[k].trim();
+        }
+      }
+    }
+
+    if (item.id && globalLabelDictionary.has(item.id)) {
+      return globalLabelDictionary.get(item.id);
+    }
+
+    if (item.partId && partsById.has(item.partId)) {
+      const part = partsById.get(item.partId);
+      if (part.label || part.name) return (part.label || part.name).trim();
+    }
+
+    return item.id || 'Sin Nombre';
+  }
+
+  function buildGlobalLabelDictionary(rootJson) {
+    const dict = new Map();
+    const excludeTopKeys = new Set(['connectorParts', 'wires']);
+
+    function walk(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) {
+        obj.forEach(walk);
+        return;
+      }
+
+      const id = obj.id || obj.targetId || obj.nodeId || obj.elementId || obj.connectorId;
+      const lbl = obj.label || obj.name || obj.title || obj.text || obj.designation || (obj.data && (obj.data.label || obj.data.name));
+      if (typeof id === 'string' && typeof lbl === 'string' && lbl.trim() !== '' && lbl.trim() !== id) {
+        dict.set(id, lbl.trim());
+      }
+
+      Object.keys(obj).forEach(k => {
+        if (!excludeTopKeys.has(k)) {
+          walk(obj[k]);
+        }
+      });
+    }
+
+    walk(rootJson);
+    return dict;
+  }
+
+  function extractAllEndpointsFromHarness(harness) {
+    const partsById = new Map();
+    activePartsCatalog.forEach(p => partsById.set(p.id, p));
+
+    Object.keys(harness).forEach(key => {
+      if (key.toLowerCase().includes('part') && Array.isArray(harness[key])) {
+        harness[key].forEach(p => { if (p && p.id) partsById.set(p.id, p); });
+      }
+    });
+
+    const globalLabelDict = buildGlobalLabelDictionary(harness);
+    const endpointsMap = new Map();
+
+    function registerRawEndpoint(item, defaultKind) {
+      if (!item || !item.id) return;
+      const partObj = item.partId ? partsById.get(item.partId) : null;
+      let rawCavities = [];
+
+      if (Array.isArray(item.cavities) && item.cavities.length > 0) {
+        rawCavities = item.cavities.map(c => ({ id: c.id || String(c), name: c.name || c.label || null }));
+      } else if (Array.isArray(item.pins) && item.pins.length > 0) {
+        rawCavities = item.pins.map(c => ({ id: c.id || String(c), name: c.name || c.label || null }));
+      } else if (item.cavityId || item.handle) {
+        rawCavities = [{ id: item.cavityId || item.handle, name: '1' }];
+      }
+
+      const humanLabel = resolveHumanLabel(item, globalLabelDict, partsById);
+      const isRing = defaultKind === 'ring' ||
+                     (partObj && (partObj.id === 'Di4QyN_RAgRUaeS3r1fk3' || partObj.numberOfCavities === 1)) ||
+                     (rawCavities.length <= 1 && (!item.cavities || item.cavities.length <= 1));
+
+      if (endpointsMap.has(item.id)) {
+        const existing = endpointsMap.get(item.id);
+        if ((existing.label === existing.id || existing.label.startsWith('Terminal ')) && humanLabel !== item.id) {
+          existing.label = humanLabel;
+        }
+        return;
+      }
+
+      endpointsMap.set(item.id, {
+        id: item.id,
+        label: humanLabel,
+        cavities: rawCavities,
+        cavToPinNumber: new Map(),
+        partObj: partObj,
+        isRing: isRing && (rawCavities.length <= 1),
+        isUnion: String(humanLabel).toLowerCase().startsWith('union') || defaultKind === 'splice'
+      });
+    }
+
+    const skipCollections = new Set(['wires', 'bundles', 'connectorParts', 'terminalParts', 'parts']);
+    Object.keys(harness).forEach(key => {
+      if (skipCollections.has(key) || !Array.isArray(harness[key])) return;
+      const kLower = key.toLowerCase();
+      harness[key].forEach(item => {
+        if (!item || typeof item !== 'object' || !item.id) return;
+        if (kLower === 'branchpoints') {
+          if (globalLabelDict.has(item.id) || item.partId || item.label || item.name) {
+            registerRawEndpoint(item, 'ring');
+          }
+        } else if (kLower.includes('splice') || kLower.includes('union')) {
+          registerRawEndpoint(item, 'splice');
+        } else if (kLower.includes('term') || kLower.includes('ring') || kLower.includes('lug') || kLower.includes('gnd') || kLower.includes('ground')) {
+          registerRawEndpoint(item, 'ring');
+        } else {
+          registerRawEndpoint(item, 'connector');
+        }
+      });
+    });
+
+    (harness.wires || []).forEach(w => {
+      [w.source, w.target].forEach(end => {
+        if (!end || !end.id) return;
+        if (!endpointsMap.has(end.id)) {
+          const fallbackLabel = end.label || end.name || globalLabelDict.get(end.id) || end.id;
+          registerRawEndpoint({ id: end.id, label: fallbackLabel, partId: end.partId }, 'ring');
+        } else if (end.label || end.name) {
+          const ep = endpointsMap.get(end.id);
+          if (ep.label === ep.id) ep.label = end.label || end.name;
+        }
+
+        const ep = endpointsMap.get(end.id);
+        const handleId = end.handle || end.cavityId || 'default_cav';
+        const hasCav = ep.cavities.some(c => c.id === handleId);
+        if (!hasCav) {
+          ep.cavities.push({ id: handleId, name: String(ep.cavities.length + 1) });
+        }
+      });
+    });
+
+    endpointsMap.forEach(ep => {
+      if (ep.cavities.length === 0) {
+        ep.cavities.push({ id: 'cav_1', name: '1' });
+      }
+      ep.cavities.forEach((cav, idx) => {
+        const pinLabel = cav.name || String(idx + 1);
+        ep.cavToPinNumber.set(cav.id, pinLabel);
+      });
+    });
+
+    return { endpointsMap, partsById };
+  }
+
   function handleH2EFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const msg = document.getElementById('h2eFileMsg');
     msg.innerText = `Archivo cargado: ${file.name}`;
-    msg.style.color = '#34d399';
+    msg.style.color = '#1ed760';
 
     const cleanName = file.name.replace(/\.(harness|json)$/i, '').replace(/\./g, ' ');
     document.getElementById('h2eOutFileName').value = `${cleanName}.xlsx`;
@@ -1685,13 +2489,14 @@
   function populateMainConnSelect() {
     const select = document.getElementById('h2eMainConnSelect');
     select.innerHTML = `<option value="auto">Automático (El de mayor cantidad de pines)</option>`;
-    if (!loadedHarnessForExcel || !loadedHarnessForExcel.connectors) return;
+    if (!loadedHarnessForExcel) return;
 
-    loadedHarnessForExcel.connectors.forEach(c => {
-      const count = c.cavities ? c.cavities.length : 0;
+    const { endpointsMap } = extractAllEndpointsFromHarness(loadedHarnessForExcel);
+    endpointsMap.forEach(ep => {
+      const count = ep.cavities.length;
       const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.innerText = `${c.label || c.id} (${count} pines)`;
+      opt.value = ep.id;
+      opt.innerText = `${ep.label} (${count} ${count === 1 ? 'pin / Ring' : 'pines'})`;
       select.appendChild(opt);
     });
   }
@@ -1699,81 +2504,54 @@
   function rebuildExcelFromHarness() {
     if (!loadedHarnessForExcel) return;
 
-    const connectors = loadedHarnessForExcel.connectors || [];
     const wires = loadedHarnessForExcel.wires || [];
     const bundles = loadedHarnessForExcel.bundles || [];
-    const partsList = loadedHarnessForExcel.connectorParts || [];
 
-    const unitOut = document.getElementById('h2eLengthUnitSelect').value; // 'cm' o 'mm'
-    const colorLang = document.getElementById('h2eColorLangSelect').value; // 'es' o 'en'
+    const colorLang = document.getElementById('h2eColorLangSelect').value;
     const emptyColA = document.getElementById('chkH2EEmptyColA').checked;
     const hideEmptyConns = document.getElementById('chkH2EHideEmptyConns').checked;
     const selectedMainId = document.getElementById('h2eMainConnSelect').value;
 
-    // Mapa de partes por ID
-    const partsById = new Map();
-    activePartsCatalog.forEach(p => partsById.set(p.id, p));
-    partsList.forEach(p => partsById.set(p.id, p));
+    const { endpointsMap } = extractAllEndpointsFromHarness(loadedHarnessForExcel);
 
-    // Mapa de conectores y cavidades
-    const connById = new Map();
-    connectors.forEach(c => {
-      const cavMap = new Map(); // cavId -> numero de pin (1..N)
-      if (Array.isArray(c.cavities)) {
-        c.cavities.forEach((cav, idx) => {
-          cavMap.set(cav.id, String(idx + 1));
-        });
-      }
-      connById.set(c.id, {
-        raw: c,
-        id: c.id,
-        label: c.label || c.id,
-        cavities: c.cavities || [],
-        cavToPinNumber: cavMap,
-        partObj: c.partId ? partsById.get(c.partId) : null
-      });
-    });
-
-    // Determinar Conector Principal para la Hoja 1
     let mainConn = null;
-    if (selectedMainId !== 'auto' && connById.has(selectedMainId)) {
-      mainConn = connById.get(selectedMainId);
+    if (selectedMainId !== 'auto' && endpointsMap.has(selectedMainId)) {
+      mainConn = endpointsMap.get(selectedMainId);
     } else {
-      connById.forEach(c => {
-        if (!mainConn || c.cavities.length > mainConn.cavities.length) {
-          mainConn = c;
+      endpointsMap.forEach(ep => {
+        if (!mainConn || ep.cavities.length > mainConn.cavities.length) {
+          mainConn = ep;
         }
       });
     }
 
-    // Indexar conexiones por (connId + cavId)
-    const connectionsByCav = new Map(); // `${connId}:${cavId}` -> array de conexiones hacia otros extremos
+    const connectionsByCav = new Map();
     wires.forEach(w => {
       if (!w.source || !w.target) return;
-      const srcConn = connById.get(w.source.id);
-      const tgtConn = connById.get(w.target.id);
+      const srcConn = endpointsMap.get(w.source.id);
+      const tgtConn = endpointsMap.get(w.target.id);
       if (!srcConn || !tgtConn) return;
 
-      const srcPin = srcConn.cavToPinNumber.get(w.source.handle) || '1';
-      const tgtPin = tgtConn.cavToPinNumber.get(w.target.handle) || '1';
+      const srcHandle = w.source.handle || w.source.cavityId || srcConn.cavities[0]?.id;
+      const tgtHandle = w.target.handle || w.target.cavityId || tgtConn.cavities[0]?.id;
+
+      const srcPin = srcConn.cavToPinNumber.get(srcHandle) || '1';
+      const tgtPin = tgtConn.cavToPinNumber.get(tgtHandle) || '1';
       const colorFormatted = translateColorToExcel(w.color, w.stripeColor, colorLang);
       const gaugeFormatted = w.gauge ? String(w.gauge) : '';
 
-      const pathMm = computeBundlePathLengthMm(loadedHarnessForExcel, srcConn.id, tgtConn.id);
-      let lengthFormatted = '';
-      if (pathMm !== null && pathMm > 0) {
-        lengthFormatted = unitOut === 'cm' ? Number((pathMm / 10).toFixed(1)) : pathMm;
-      }
+      const pathLengthDirect = computeBundlePathLengthDirect(loadedHarnessForExcel, srcConn.id, tgtConn.id);
+      const lengthFormatted = (pathLengthDirect !== null && pathLengthDirect > 0) ? pathLengthDirect : '';
 
-      const keySrc = `${srcConn.id}:${w.source.handle}`;
-      const keyTgt = `${tgtConn.id}:${w.target.handle}`;
+      const keySrc = `${srcConn.id}:${srcHandle}`;
+      const keyTgt = `${tgtConn.id}:${tgtHandle}`;
 
       if (!connectionsByCav.has(keySrc)) connectionsByCav.set(keySrc, []);
       if (!connectionsByCav.has(keyTgt)) connectionsByCav.set(keyTgt, []);
 
       connectionsByCav.get(keySrc).push({
         destConnName: tgtConn.label,
-        destPin: tgtPin,
+        destPin: tgtConn.isUnion ? '-' : tgtPin,
         color: colorFormatted,
         gauge: gaugeFormatted,
         length: lengthFormatted,
@@ -1782,7 +2560,7 @@
 
       connectionsByCav.get(keyTgt).push({
         destConnName: srcConn.label,
-        destPin: srcPin,
+        destPin: srcConn.isUnion ? '-' : srcPin,
         color: colorFormatted,
         gauge: gaugeFormatted,
         length: lengthFormatted,
@@ -1791,28 +2569,18 @@
     });
 
     const prefix = emptyColA ? [''] : [];
+    const colOffset = emptyColA ? 1 : 0;
+    const blankRow = [...prefix, '', '', '', '', '', '', '', '', '', ''];
     const headerRow = [...prefix, 'Nombre', 'Conector', 'Pin', 'Descripcion', 'Conductor', 'Color', 'Largo', 'Termina en', 'Pin', 'Asignacion'];
 
-    // Construir bloque de filas para un conector siguiendo exactamente tu modelo de Excel
-    function buildConnectorBlockRows(connInfo) {
+    function buildConnectorBlock(connInfo, isMainSheet, startRowIndexInSheet) {
       const blockRows = [];
-      const connectorTypeStr = formatPartNameForExcel(connInfo.partObj, connInfo.cavities.length);
+      const connectorTypeStr = formatPartNameForExcel(connInfo.partObj, connInfo.label, connInfo.cavities.length, connInfo.isRing);
       let isFirstRowOfConnector = true;
-
-      if (connInfo.cavities.length === 0) {
-        blockRows.push([
-          ...prefix,
-          connInfo.label,
-          connectorTypeStr,
-          '1', '', '', '', '', '', '', ''
-        ]);
-        return { rows: blockRows, connectedCount: 0 };
-      }
-
       let connectedCount = 0;
 
       connInfo.cavities.forEach((cav, idx) => {
-        const pinNum = String(idx + 1);
+        const pinNum = connInfo.isUnion ? '-' : (connInfo.cavToPinNumber.get(cav.id) || String(idx + 1));
         const key = `${connInfo.id}:${cav.id}`;
         const matches = connectionsByCav.get(key) || [];
 
@@ -1828,7 +2596,6 @@
         } else {
           connectedCount += matches.length;
           matches.forEach((m, mIdx) => {
-            // Si hay más de un cable en el mismo pin (ej. empalme en el pin), anotar el segundo en Asignación
             const extraNote = (matches.length > 1 && mIdx === 0)
               ? `Union ${matches.slice(1).map(x => x.destConnName).join(' / ')}`
               : '';
@@ -1851,47 +2618,89 @@
         }
       });
 
-      return { rows: blockRows, connectedCount: connectedCount };
-    }
-
-    // --- 1. ARMAR HOJA 1 (CONECTOR PRINCIPAL) ---
-    h2eSheet1AOA = [];
-    if (mainConn) {
-      h2eMainSheetName = mainConn.label.slice(0, 28);
-      h2eSheet1AOA.push(headerRow);
-      const mainBlock = buildConnectorBlockRows(mainConn);
-      h2eSheet1AOA.push(...mainBlock.rows);
-    }
-
-    // --- 2. ARMAR HOJA 2 (TODOS LOS DEMÁS CONECTORES APILADOS CON FILA EN BLANCO Y ENCABEZADO REPETIDO) ---
-    h2eSheet2AOA = [];
-    const peripheralList = Array.from(connById.values()).filter(c => !mainConn || c.id !== mainConn.id);
-    let activeBlocksCount = 0;
-
-    peripheralList.forEach((connInfo) => {
-      const block = buildConnectorBlockRows(connInfo);
-      if (hideEmptyConns && block.connectedCount === 0) return;
-
-      if (activeBlocksCount > 0) {
-        // Fila completamente en blanco de separación entre un conector y el siguiente
-        h2eSheet2AOA.push(headerRow.map(() => ''));
+      const merges = [];
+      if (blockRows.length > 1) {
+        merges.push({
+          s: { r: startRowIndexInSheet, c: colOffset + 0 },
+          e: { r: startRowIndexInSheet + blockRows.length - 1, c: colOffset + 0 }
+        });
+        merges.push({
+          s: { r: startRowIndexInSheet, c: colOffset + 1 },
+          e: { r: startRowIndexInSheet + blockRows.length - 1, c: colOffset + 1 }
+        });
       }
 
-      // Repetir el encabezado Nombre | Conector | Pin... arriba de cada conector (igual que en tu Hoja 2)
-      h2eSheet2AOA.push(headerRow);
-      h2eSheet2AOA.push(...block.rows);
+      const rowMeta = blockRows.map(() => ({
+        type: 'data',
+        isMainSheet: isMainSheet,
+        isUnion: connInfo.isUnion
+      }));
+
+      return { rows: blockRows, merges: merges, rowMeta: rowMeta, connectedCount: connectedCount };
+    }
+
+    const s1AOA = [];
+    const s1Merges = [];
+    const s1Meta = [];
+
+    if (emptyColA) {
+      s1AOA.push([...blankRow]);
+      s1Meta.push({ type: 'blank' });
+    }
+
+    if (mainConn) {
+      h2eMainSheetName = mainConn.label.slice(0, 28);
+      s1AOA.push([...headerRow]);
+      s1Meta.push({ type: 'header' });
+
+      const mainBlock = buildConnectorBlock(mainConn, true, s1AOA.length);
+      s1AOA.push(...mainBlock.rows);
+      s1Merges.push(...mainBlock.merges);
+      s1Meta.push(...mainBlock.rowMeta);
+    }
+    h2eSheet1Data = { aoa: s1AOA, merges: s1Merges, rowMeta: s1Meta };
+
+    const s2AOA = [];
+    const s2Merges = [];
+    const s2Meta = [];
+
+    if (emptyColA) {
+      s2AOA.push([...blankRow]);
+      s2Meta.push({ type: 'blank' });
+    }
+
+    const peripheralList = Array.from(endpointsMap.values()).filter(c => !mainConn || c.id !== mainConn.id);
+    let activeBlocksCount = 0;
+
+    peripheralList.forEach(connInfo => {
+      const tempBlock = buildConnectorBlock(connInfo, false, 0);
+      if (hideEmptyConns && tempBlock.connectedCount === 0) return;
+
+      if (activeBlocksCount > 0) {
+        s2AOA.push([...blankRow]);
+        s2Meta.push({ type: 'blank' });
+      }
+
+      s2AOA.push([...headerRow]);
+      s2Meta.push({ type: 'header' });
+
+      const realBlock = buildConnectorBlock(connInfo, false, s2AOA.length);
+      s2AOA.push(...realBlock.rows);
+      s2Merges.push(...realBlock.merges);
+      s2Meta.push(...realBlock.rowMeta);
       activeBlocksCount++;
     });
 
-    // Actualizar indicadores
+    h2eSheet2Data = { aoa: s2AOA, merges: s2Merges, rowMeta: s2Meta };
+
     document.getElementById('h2eStatsBar').style.display = 'grid';
-    document.getElementById('h2eStatConns').innerText = connectors.length;
+    document.getElementById('h2eStatConns').innerText = endpointsMap.size;
     document.getElementById('h2eStatWires').innerText = wires.length;
     document.getElementById('h2eStatBundles').innerText = bundles.length;
 
     document.getElementById('lblH2ESheet1Name').innerText = h2eMainSheetName;
-    document.getElementById('badgeH2ESheet1').innerText = `${Math.max(0, h2eSheet1AOA.length - 1)} pines`;
-    document.getElementById('badgeH2ESheet2').innerText = `${activeBlocksCount} conectores`;
+    document.getElementById('badgeH2ESheet1').innerText = `${mainConn ? mainConn.cavities.length : 0} pines`;
+    document.getElementById('badgeH2ESheet2').innerText = `${activeBlocksCount} bloques`;
     document.getElementById('btnDownloadH2E').disabled = false;
 
     renderH2EPreview();
@@ -1907,7 +2716,9 @@
   function renderH2EPreview() {
     if (!loadedHarnessForExcel) return;
     const container = document.getElementById('h2ePreviewContainer');
-    const aoa = currentH2ETab === 'sheet1' ? h2eSheet1AOA : h2eSheet2AOA;
+    const sheetData = currentH2ETab === 'sheet1' ? h2eSheet1Data : h2eSheet2Data;
+    const aoa = sheetData.aoa;
+    const meta = sheetData.rowMeta;
     const emptyColA = document.getElementById('chkH2EEmptyColA').checked;
     const startColIdx = emptyColA ? 1 : 0;
 
@@ -1918,35 +2729,34 @@
 
     const colTitles = ['Nombre', 'Conector', 'Pin', 'Descripcion', 'Conductor', 'Color', 'Largo', 'Termina en', 'Pin', 'Asignacion'];
     let html = `<table class="audit-table"><thead><tr><th style="width:42px; text-align:center;">Fila</th>`;
-    colTitles.forEach(t => { html += `<th>${t}</th>`; });
+    colTitles.forEach(t => { html += `<th style="text-align:center;">${t}</th>`; });
     html += `</tr></thead><tbody>`;
 
     aoa.forEach((row, rIdx) => {
+      const rMeta = meta[rIdx] || { type: 'data' };
       const visibleCells = row.slice(startColIdx);
-      const isBlank = visibleCells.every(c => String(c).trim() === '');
-      const isHeader = String(visibleCells[0]).trim().toLowerCase() === 'nombre';
 
-      if (isBlank) {
-        html += `<tr class="row-blank-sep"><td style="text-align:center;">${rIdx + 1}</td><td colspan="10">— Fila en blanco de separación —</td></tr>`;
-      } else if (isHeader) {
+      if (rMeta.type === 'blank') {
+        html += `<tr class="row-blank-sep"><td style="text-align:center;">${rIdx + 1}</td><td colspan="10">— Fila en blanco —</td></tr>`;
+      } else if (rMeta.type === 'header') {
         html += `<tr class="row-header-repeat"><td style="text-align:center;">${rIdx + 1}</td>`;
         visibleCells.forEach(c => { html += `<td>${c}</td>`; });
         html += `</tr>`;
       } else {
-        html += `<tr><td style="text-align:center; color:#64748b; font-family:monospace;">${rIdx + 1}</td>`;
+        html += `<tr><td style="text-align:center; color:var(--text-muted); font-family:monospace;">${rIdx + 1}</td>`;
         for (let i = 0; i < 10; i++) {
           const val = visibleCells[i] !== undefined ? visibleCells[i] : '';
-          if (i === 0 && val) {
-            html += `<td><strong style="color:#fff;">${val}</strong></td>`;
-          } else if (i === 1 && val) {
-            html += `<td><span class="badge-part">${val}</span></td>`;
-          } else if ((i === 2 || i === 8) && val) {
-            html += `<td style="font-weight:700; color:#34d399; font-family:monospace;">${val}</td>`;
-          } else if (i === 7 && val) {
-            html += `<td style="font-weight:600; color:#38bdf8;">${val}</td>`;
-          } else {
-            html += `<td>${val}</td>`;
+          let cellClass = '';
+
+          if (rMeta.isMainSheet && i === 2) {
+            cellClass = 'cell-excel-cyan';
+          } else if (!rMeta.isMainSheet && !rMeta.isUnion && (i === 0 || i === 1) && val !== '') {
+            cellClass = 'cell-excel-green';
+          } else if (!rMeta.isMainSheet && rMeta.isUnion && i === 2) {
+            cellClass = 'cell-excel-green';
           }
+
+          html += `<td class="${cellClass}" style="text-align:center;">${val}</td>`;
         }
         html += `</tr>`;
       }
@@ -1956,41 +2766,120 @@
     container.innerHTML = html;
   }
 
-  function autoFitExcelCols(aoa) {
-    if (!aoa || aoa.length === 0) return [];
-    const colCount = Math.max(...aoa.map(r => r.length));
-    const widths = [];
-    for (let c = 0; c < colCount; c++) {
-      if (c === 0 && document.getElementById('chkH2EEmptyColA').checked) {
-        widths.push({ wch: 4 });
-        continue;
+  function buildStyledWorksheet(sheetData, emptyColA) {
+    const { aoa, merges, rowMeta } = sheetData;
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!merges'] = merges;
+
+    const colOffset = emptyColA ? 1 : 0;
+    const totalCols = colOffset + 10;
+
+    const thinBorder = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    };
+
+    for (let r = 0; r < aoa.length; r++) {
+      const meta = rowMeta[r] || { type: 'blank' };
+      if (meta.type === 'blank') continue;
+
+      for (let c = colOffset; c < totalCols; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r, c });
+        if (!ws[cellRef]) {
+          ws[cellRef] = { t: 's', v: '' };
+        }
+        const cell = ws[cellRef];
+        const relCol = c - colOffset;
+
+        const styleObj = {
+          font: { name: "Calibri", sz: 11, color: { rgb: "000000" }, bold: false },
+          alignment: { horizontal: "center", vertical: "center", wrapText: true },
+          border: thinBorder
+        };
+
+        if (meta.type === 'header') {
+          styleObj.fill = { patternType: "solid", fgColor: { rgb: "F2F2F2" } };
+          styleObj.font.bold = true;
+        } else if (meta.type === 'data') {
+          if (meta.isMainSheet) {
+            if (relCol === 0) styleObj.font.bold = true;
+            if (relCol === 2) {
+              styleObj.fill = { patternType: "solid", fgColor: { rgb: "00FFFF" } };
+            }
+          } else {
+            if (!meta.isUnion && (relCol === 0 || relCol === 1)) {
+              styleObj.fill = { patternType: "solid", fgColor: { rgb: "00FF00" } };
+            } else if (meta.isUnion && relCol === 2) {
+              styleObj.fill = { patternType: "solid", fgColor: { rgb: "00FF00" } };
+            }
+          }
+        }
+
+        cell.s = styleObj;
       }
-      let maxLen = 10;
+    }
+
+    const minWidthsByRelCol = [
+      16, // Nombre
+      16, // Conector
+      6,  // Pin
+      26, // Descripcion
+      12, // Conductor
+      11, // Color
+      8,  // Largo
+      20, // Termina en
+      6,  // Pin
+      16  // Asignacion
+    ];
+
+    const colWidths = [];
+    if (emptyColA) {
+      colWidths.push({ wch: 4 });
+    }
+
+    for (let relC = 0; relC < 10; relC++) {
+      const actualC = colOffset + relC;
+      let maxLen = minWidthsByRelCol[relC];
+
       for (let r = 0; r < aoa.length; r++) {
-        const val = aoa[r][c];
-        if (val !== null && val !== undefined) {
-          const l = String(val).length;
-          if (l > maxLen) maxLen = l;
+        const val = aoa[r][actualC];
+        if (val !== null && val !== undefined && String(val).trim() !== '') {
+          const normalizedText = String(val).replace(/\s{2,}/g, ' ').trim();
+          const lines = normalizedText.split(/\r?\n/);
+          lines.forEach(line => {
+            if (line.length + 4 > maxLen) {
+              maxLen = line.length + 4;
+            }
+          });
         }
       }
-      widths.push({ wch: Math.min(maxLen + 4, 38) });
+
+      colWidths.push({ wch: Math.min(maxLen, 36) });
     }
-    return widths;
+    ws['!cols'] = colWidths;
+
+    ws['!rows'] = aoa.map((_, rIdx) => {
+      const m = rowMeta[rIdx] || { type: 'blank' };
+      if (m.type === 'header') return { hpt: 22 };
+      if (m.type === 'blank') return { hpt: 15 };
+      return { hpt: 20 };
+    });
+
+    return ws;
   }
 
   function downloadExcelFromHarness() {
     if (!loadedHarnessForExcel) return;
 
+    const emptyColA = document.getElementById('chkH2EEmptyColA').checked;
     const wb = XLSX.utils.book_new();
 
-    // Hoja 1: Conector Principal (ej. "Link Firewall")
-    const ws1 = XLSX.utils.aoa_to_sheet(h2eSheet1AOA);
-    ws1['!cols'] = autoFitExcelCols(h2eSheet1AOA);
+    const ws1 = buildStyledWorksheet(h2eSheet1Data, emptyColA);
     XLSX.utils.book_append_sheet(wb, ws1, h2eMainSheetName || 'Link Firewall');
 
-    // Hoja 2: Periféricos apilados ("Hoja 2")
-    const ws2 = XLSX.utils.aoa_to_sheet(h2eSheet2AOA);
-    ws2['!cols'] = autoFitExcelCols(h2eSheet2AOA);
+    const ws2 = buildStyledWorksheet(h2eSheet2Data, emptyColA);
     XLSX.utils.book_append_sheet(wb, ws2, 'Hoja 2');
 
     let outName = document.getElementById('h2eOutFileName').value.trim() || 'Plano_Reconstruido.xlsx';

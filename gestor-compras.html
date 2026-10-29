@@ -10,241 +10,857 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
-    :root {
-      --bg-body: #0b0f17; --bg-panel: #131b2e; --border: #1e293b;
-      --text-main: #f8fafc; --text-muted: #94a3b8;
+    /* ==========================================================================
+       ESTILOS ESPECÍFICOS DE GESTOR-COMPRAS.HTML (DARK STREAMING & GLASMORFISMO)
+       ========================================================================== */
+    body {
+      padding: 0;
+      background-color: var(--bg-body);
+      background-image: 
+        radial-gradient(at 15% 0%, rgba(59, 91, 253, 0.24) 0px, transparent 50%),
+        radial-gradient(at 85% 5%, rgba(0, 212, 255, 0.12) 0px, transparent 45%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
     }
 
-    body { background: var(--bg-body); display: flex; flex-direction: column; }
-    h2, h3 { color: #f8fafc; margin: 0; }
-    label { color: #cbd5e1; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px; }
-    
-    .main-header {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      padding: 20px 28px; border-radius: 12px; margin-bottom: 24px;
-      display: flex; align-items: center; justify-content: space-between;
+    /* --- 1. NAVBAR FIJA CON GLASMORFISMO --- */
+    .navbar-glass {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: rgba(18, 18, 18, 0.72);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
-    .header-brand { display: flex; align-items: center; gap: 20px; }
-    .header-logo { width: 56px; height: 56px; object-fit: contain; }
-    .header-title h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
-    .header-title p { margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
 
-    .dashboard-layout { display: grid; grid-template-columns: 1fr 2.2fr; gap: 24px; }
-    
-    .import-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; height: fit-content; }
-    
+    .navbar-glass.scrolled {
+      background: rgba(12, 12, 14, 0.9);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    }
+
+    .nav-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(59, 91, 253, 0.25), rgba(0, 212, 255, 0.1));
+      border: 1px solid rgba(59, 91, 253, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: transform 0.25s ease;
+    }
+
+    .brand:hover .brand-logo-wrap {
+      transform: rotate(-4deg) scale(1.06);
+    }
+
+    .brand img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .brand p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (min-width: 860px) {
+      .nav-links { display: flex; }
+      .nav-inner { padding: 14px 32px; }
+    }
+
+    .nav-pill {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      transition: all 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .nav-pill.active {
+      color: #ffffff;
+      background: rgba(59, 91, 253, 0.22);
+      border: 1px solid rgba(59, 91, 253, 0.45);
+    }
+
+    /* --- 2. CONTENEDOR PRINCIPAL --- */
+    .main-wrapper {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 60px 16px;
+      flex: 1;
+    }
+
+    @media (min-width: 768px) {
+      .main-wrapper {
+        padding: 32px 32px 80px 32px;
+      }
+    }
+
+    /* --- 3. HERO CON DEGRADADO Y KPI CARDS --- */
+    .page-hero {
+      position: relative;
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      margin-bottom: 28px;
+      background: 
+        radial-gradient(700px circle at var(--hero-x, 20%) var(--hero-y, 30%), rgba(59, 91, 253, 0.38), transparent 55%),
+        linear-gradient(135deg, #1b2442 0%, #151926 55%, #181818 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .page-hero {
+        padding: 34px 38px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .interactive-title {
+      font-size: clamp(1.65rem, 3.6vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+      background: linear-gradient(
+        var(--title-angle, 95deg),
+        #ffffff 0%,
+        #dbe4ff 45%,
+        #00d4ff 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      max-width: 580px;
+      margin: 0;
+    }
+
+    .hero-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      min-width: 300px;
+    }
+
+    .kpi-pill-card {
+      background: rgba(18, 18, 18, 0.65);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      text-align: center;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kpi-pill-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-hover);
+    }
+
+    .kpi-pill-card strong {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .kpi-pill-card span {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* --- 4. LAYOUT PRINCIPAL --- */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+      .dashboard-layout {
+        grid-template-columns: 370px 1fr;
+      }
+    }
+
+    .import-panel, .table-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Dropzone con microinteracción */
     .file-drop-area {
-      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      width: 100%; height: 140px; margin-top: 8px; margin-bottom: 20px;
-      border: 2px dashed #334155; border-radius: 8px; background: #0f172a;
-      transition: 0.2s; text-align: center; color: var(--text-muted);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 135px;
+      margin-top: 8px;
+      margin-bottom: 20px;
+      border: 2px dashed rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-md);
+      background: #202020;
+      transition: all 0.25s ease;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 14px;
     }
-    .file-drop-area:hover { border-color: var(--primary); background: #18223d; }
-    .file-msg { font-size: 0.85rem; margin-top: 8px; font-weight: 600; }
-    .file-input { position: absolute; left: 0; top: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
 
-    .invoice-list { list-style: none; padding: 0; margin: 16px 0 0 0; max-height: 200px; overflow-y: auto; }
-    .invoice-item { 
-      display: flex; justify-content: space-between; align-items: center; 
-      padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.82rem; 
-      background: #0f172a; border-radius: 6px; margin-bottom: 8px;
+    .file-drop-area:hover {
+      border-color: var(--accent-cyan);
+      background: #262626;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     }
-    .invoice-item strong { color: #fff; }
 
-    .table-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; }
-    .table-dark { width: 100%; border-collapse: collapse; margin-top: 16px; color: var(--text-main); }
-    .table-dark th { background: #0f172a; color: var(--text-muted); font-weight: 600; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase;}
-    .table-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-    .table-row-clickable { cursor: pointer; transition: background 0.2s, opacity 0.2s; }
-    .table-row-clickable:hover { background: #18223d; }
-    
-    .sortable { cursor: pointer; transition: color 0.2s; user-select: none; }
-    .sortable:hover { color: #fff; }
-    .sort-icon { font-size: 0.75rem; margin-left: 4px; color: var(--primary); }
-    
-    .select-dark { background: #0f172a; color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; }
-    .search-input { width: 200px; }
-    input[type="date"] { background: #0f172a; color: white; color-scheme: dark; margin-bottom: 16px;}
-    
+    .file-msg {
+      font-size: 0.84rem;
+      margin-top: 8px;
+      font-weight: 700;
+    }
+
+    .file-input {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      cursor: pointer;
+      opacity: 0;
+    }
+
+    input[type="date"] {
+      background: #242424;
+      color: #ffffff;
+      color-scheme: dark;
+      margin-bottom: 14px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* --- 5. CARRUSEL HORIZONTAL DE HISTORIAL DE CARGAS --- */
+    .carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .carousel-nav-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mini-arrow {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #242424;
+      border: 1px solid var(--border);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mini-arrow:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.08);
+    }
+
+    .invoice-carousel {
+      list-style: none;
+      padding: 4px 2px 10px 2px;
+      margin: 0;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .invoice-item {
+      flex: 0 0 230px;
+      scroll-snap-align: start;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      background: #202020;
+      border-radius: var(--radius-sm);
+      transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .invoice-item:hover {
+      transform: translateY(-3px);
+      background: #282828;
+      border-color: var(--border-hover);
+    }
+
+    .invoice-item strong {
+      color: #ffffff;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 155px;
+    }
+
+    /* --- 6. CONTROLES SUPERIORES Y TABLA DE INVENTARIO --- */
+    .controls-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .select-dark {
+      background: #242424;
+      color: #ffffff;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.83rem;
+      font-weight: 600;
+      width: auto;
+      cursor: pointer;
+    }
+
+    .search-input {
+      width: 220px;
+      padding-left: 16px;
+    }
+
     .filter-toggle {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #0f172a; border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;
-      color: #cbd5e1; cursor: pointer; user-select: none; margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #242424;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      cursor: pointer;
+      user-select: none;
+      margin: 0;
+      transition: all 0.2s ease;
     }
-    .filter-toggle:hover { border-color: #475569; }
-    .filter-toggle input { cursor: pointer; margin: 0; }
 
-    .btn-edit-alias { background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.5; transition: 0.2s; margin-left: 8px; }
-    .btn-edit-alias:hover { opacity: 1; transform: scale(1.1); }
+    .filter-toggle:hover {
+      background: #2e2e2e;
+      border-color: var(--border-hover);
+    }
 
-    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .status-green { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .status-yellow { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .status-red { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .status-gray { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
-    .status-dark { background: rgba(15, 23, 42, 0.6); color: #475569; border: 1px dashed rgba(71, 85, 105, 0.5); }
+    .filter-toggle input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .table-dark {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      color: var(--text-main);
+    }
+
+    .table-dark th {
+      background: #141414;
+      color: var(--text-muted);
+      font-weight: 800;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .table-dark td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    .table-row-clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .table-row-clickable:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .sortable {
+      cursor: pointer;
+      transition: color 0.2s ease;
+      user-select: none;
+    }
+
+    .sortable:hover {
+      color: #ffffff;
+    }
+
+    .sort-icon {
+      font-size: 0.75rem;
+      margin-left: 4px;
+      color: var(--accent-cyan);
+    }
+
+    .btn-edit-alias {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid transparent;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.88rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+      margin-left: 6px;
+    }
+
+    .btn-edit-alias:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.14);
+      border-color: var(--border-hover);
+      transform: scale(1.1);
+    }
+
+    /* Insignias de estado estilo píldora */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .status-green { background: rgba(30, 215, 96, 0.12); color: var(--badge-green); border: 1px solid rgba(30, 215, 96, 0.3); }
+    .status-yellow { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-red { background: rgba(239, 68, 68, 0.14); color: #ff6b6b; border: 1px solid rgba(239, 68, 68, 0.35); }
+    .status-gray { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); }
+    .status-dark { background: rgba(18, 18, 18, 0.8); color: #64748b; border: 1px dashed rgba(100, 116, 139, 0.4); }
     
     .pulse-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .status-green .pulse-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .status-green .pulse-dot { background: var(--badge-green); box-shadow: 0 0 8px var(--badge-green); }
     .status-yellow .pulse-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
-    .status-red .pulse-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
-    .status-gray .pulse-dot { background: #94a3b8; }
+    .status-red .pulse-dot { background: #ff6b6b; box-shadow: 0 0 8px #ff6b6b; }
+    .status-gray .pulse-dot { background: var(--text-muted); }
     .status-dark .pulse-dot { display: none; }
 
-    .controls-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
-
-    /* MODAL FLOTANTE */
+    /* --- 7. MODAL FLOTANTE CON GLASMORFISMO --- */
     .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-      background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
     }
-    .modal-content {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 12px; padding: 24px; width: 90%; max-width: 850px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
-    .btn-close-modal {
-      background: none; border: none; color: var(--text-muted); font-size: 1.5rem;
-      cursor: pointer; transition: 0.2s;
-    }
-    .btn-close-modal:hover { color: #ef4444; }
-    .chart-container { position: relative; height: 420px; width: 100%; margin-top: 16px; }
 
-    @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } }
+    .modal-content {
+      background: #181818;
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75);
+    }
+
+    .btn-close-modal {
+      background: #242424;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close-modal:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ff6b6b;
+      border-color: rgba(239, 68, 68, 0.4);
+      transform: scale(1.08);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    /* Animaciones al hacer scroll */
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      background: #0c0c0c;
+      padding: 24px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: auto;
+    }
   </style>
 </head>
 <body>
 
-<div class="container" style="max-width: 1300px;">
-  <div class="main-header">
-    <div class="header-brand">
-      <img src="logo-transparente.webp" alt="LoomTech" class="header-logo" onerror="this.style.display='none'">
-      <div class="header-title">
-        <h1>Gestor de Insumos & Radar de Compras</h1>
-        <p>Sistema Predictivo de Stock (Burn Rate)</p>
+  <!-- BARRA DE NAVEGACIÓN FIJA CON GLASMORFISMO -->
+  <nav class="navbar-glass" id="mainNav">
+    <div class="nav-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-logo-wrap">
+          <img src="logo-transparente.webp" alt="LoomTech" onerror="this.style.display='none'">
+        </div>
+        <div>
+          <h1>LoomTech</h1>
+          <p>Radar Predictivo de Insumos</p>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-pill">Hub Principal</a>
+        <a href="facturador.html" class="nav-pill">Comprobantes</a>
+        <a href="gestor-compras.html" class="nav-pill active">Gestor de Compras</a>
+        <a href="cableados.html" class="nav-pill">Pinouts & Mazos</a>
       </div>
+
+      <a href="index.html" class="btn-secondary" style="text-decoration: none;">
+        &larr; Volver al Hub
+      </a>
     </div>
-    <a href="index.html" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Hub</a>
-  </div>
+  </nav>
 
-  <div class="dashboard-layout">
-    
-    <!-- PANEL IZQUIERDO -->
-    <div>
-      <div class="import-panel">
-        <h2>Importar Compra</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; margin-top:8px;">
-          Sube el archivo <strong>PDF</strong> o CSV de tu proveedor.
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-wrapper">
+
+    <!-- HERO DESTACADO CON DEGRADADO Y KPIS EN VIVO -->
+    <section class="page-hero reveal-on-scroll" id="heroBanner">
+      <div>
+        <div class="hero-eyebrow">⚡ Burn Rate & Stock Intelligence</div>
+        <h2 class="interactive-title" id="interactiveTitle">Gestor de Insumos & Radar</h2>
+        <p class="hero-subtitle">
+          Control predictivo de conectores, terminales y componentes según historial de facturas y cobertura real en días.
         </p>
+      </div>
 
-        <label>Fecha (Opcional - Se auto detecta)</label>
-        <input type="date" id="invoiceDate">
+      <div class="hero-kpis">
+        <div class="kpi-pill-card">
+          <strong id="kpiUrgent" style="color: #ff6b6b;">0</strong>
+          <span>Urgentes</span>
+        </div>
+        <div class="kpi-pill-card">
+          <strong id="kpiAlert" style="color: #fbbf24;">0</strong>
+          <span>En Alerta</span>
+        </div>
+        <div class="kpi-pill-card">
+          <strong id="kpiOk" style="color: var(--badge-green);">0</strong>
+          <span>En Stock</span>
+        </div>
+      </div>
+    </section>
 
-        <label>Cargar Archivo</label>
-        <div class="file-drop-area">
-          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:36px; height:36px; color:#64748b;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
-          </svg>
-          <span class="file-msg" id="fileMsg">Haz clic o arrastra tu archivo .pdf o .csv aquí</span>
-          <input class="file-input" type="file" id="invoiceFile" accept=".pdf, .csv, .txt" onchange="updateFileName()">
+    <div class="dashboard-layout">
+      
+      <!-- PANEL IZQUIERDO: IMPORTACIÓN Y CARRUSEL DE CARGAS -->
+      <div class="reveal-on-scroll">
+        <div class="import-panel">
+          <h2>Importar Compra</h2>
+          <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px; margin-top: 6px;">
+            Sube el archivo <strong>PDF</strong> o CSV de tu proveedor para actualizar el stock.
+          </p>
+
+          <label>Fecha (Opcional - Se auto detecta)</label>
+          <input type="date" id="invoiceDate">
+
+          <label>Cargar Archivo</label>
+          <div class="file-drop-area">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:34px; height:34px; color:var(--accent-cyan);">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+            </svg>
+            <span class="file-msg" id="fileMsg">Haz clic o arrastra tu archivo .pdf o .csv aquí</span>
+            <input class="file-input" type="file" id="invoiceFile" accept=".pdf, .csv, .txt" onchange="updateFileName()">
+          </div>
+
+          <button type="button" id="btnProcess" class="btn btn-block" onclick="processInvoiceFile()">
+            Leer Archivo y Procesar
+          </button>
+          <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: var(--badge-green); font-weight: 700; display: none;"></div>
         </div>
 
-        <button type="button" id="btnProcess" class="btn btn-block" onclick="processInvoiceFile()">Leer Archivo y Procesar</button>
-        <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: #34d399; font-weight: 600; display: none;"></div>
+        <!-- CARRUSEL HORIZONTAL DE HISTORIAL DE FACTURAS CARGADAS -->
+        <div class="import-panel" style="margin-top: 24px; padding-top: 20px;">
+          <div class="carousel-header">
+            <h3 style="font-size: 1.05rem; margin: 0;">Historial de Cargas</h3>
+            <div class="carousel-nav-btns">
+              <button type="button" class="mini-arrow" onclick="scrollInvoices(-1)" title="Anterior">&larr;</button>
+              <button type="button" class="mini-arrow" onclick="scrollInvoices(1)" title="Siguiente">&rarr;</button>
+            </div>
+          </div>
+          <ul id="loadedInvoicesList" class="invoice-carousel"></ul>
+        </div>
       </div>
 
-      <div class="import-panel" style="margin-top: 24px; padding-top: 16px;">
-        <h3 style="font-size: 1.05rem;">Historial de Cargas</h3>
-        <ul id="loadedInvoicesList" class="invoice-list"></ul>
-      </div>
-    </div>
+      <!-- PANEL DERECHO: TABLA DE RADAR DE INVENTARIO -->
+      <div class="table-panel reveal-on-scroll">
+        <div class="controls-top">
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <h2 style="margin: 0;">Radar de Inventario</h2>
+            <input type="text" id="searchInput" class="select-dark search-input" placeholder="🔍 Buscar SKU o Alias..." oninput="renderInventory()">
+          </div>
+          
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label class="filter-toggle" title="Oculta los ítems marcados como 'No Seguir' o que llevan mucho tiempo sin comprarse">
+              <input type="checkbox" id="hideInactiveCheck" checked onchange="renderInventory()">
+              Ocultar Inactivos
+            </label>
 
-    <!-- PANEL DERECHO -->
-    <div class="table-panel">
-      <div class="controls-top">
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <h2>Radar de Inventario</h2>
-          <input type="text" id="searchInput" class="select-dark search-input" placeholder="🔍 Buscar SKU o Alias..." oninput="renderInventory()">
+            <select id="activeWindowSelect" class="select-dark" onchange="renderInventory()" title="Tiempo máximo sin compras antes de considerar un ítem como Inactivo">
+              <option value="180">Activos: Últ. 6 meses</option>
+              <option value="365" selected>Activos: Últ. año</option>
+              <option value="730">Activos: Últ. 2 años</option>
+              <option value="99999">Activos: Siempre</option>
+            </select>
+
+            <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()" title="Escala de consumo">
+              <option value="1">Diario</option>
+              <option value="30" selected>Mensual</option>
+              <option value="60">Bimestral</option>
+              <option value="180">Semestral</option>
+              <option value="365">Anual</option>
+            </select>
+            
+            <button class="btn-secondary btn-sm" onclick="exportData()" title="Descargar Backup JSON">⬇️</button>
+            <input type="file" id="importBackupFile" style="display:none" accept=".json" onchange="importData(event)">
+            <button class="btn-secondary btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Subir Backup JSON">⬆️</button>
+            <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()" title="Borrar toda la base">🗑️</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table-dark">
+            <thead>
+              <tr>
+                <th class="sortable" onclick="setSort('sku')">SKU / Alias <span class="sort-icon" id="sort-sku"></span></th>
+                <th class="sortable" onclick="setSort('history')">Historial <span class="sort-icon" id="sort-history"></span></th>
+                <th class="sortable" onclick="setSort('burn')">Consumo <span class="sort-icon" id="sort-burn"></span></th>
+                <th class="sortable" onclick="setSort('stock')">Stock Est. <span class="sort-icon" id="sort-stock"></span></th>
+                <th class="sortable" onclick="setSort('urgency')">Estado Actual <span class="sort-icon" id="sort-urgency"></span></th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
+          </table>
         </div>
         
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <label class="filter-toggle" title="Oculta los ítems marcados como 'No Seguir' o que llevan mucho tiempo sin comprarse">
-            <input type="checkbox" id="hideInactiveCheck" checked onchange="renderInventory()">
-            Ocultar Inactivos
-          </label>
-
-          <select id="activeWindowSelect" class="select-dark" onchange="renderInventory()" title="Tiempo máximo sin compras antes de considerar un ítem como Inactivo">
-            <option value="180">Activos: Últ. 6 meses</option>
-            <option value="365" selected>Activos: Últ. año</option>
-            <option value="730">Activos: Últ. 2 años</option>
-            <option value="99999">Activos: Siempre</option>
-          </select>
-
-          <select id="timeFrameSelect" class="select-dark" onchange="renderInventory()" title="Escala de consumo">
-            <option value="1">Diario</option>
-            <option value="30" selected>Mensual</option>
-            <option value="60">Bimestral</option>
-            <option value="180">Semestral</option>
-            <option value="365">Anual</option>
-          </select>
-          
-          <button class="btn-secondary btn-sm" onclick="exportData()" title="Descargar Backup">⬇️</button>
-          <input type="file" id="importBackupFile" style="display:none" accept=".json" onchange="importData(event)">
-          <button class="btn-secondary btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Subir Backup">⬆️</button>
-          <button class="btn-secondary btn-sm btn-danger" onclick="clearInventory()" title="Borrar toda la base">🗑️</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 8px;">
+          <span id="hiddenCountMsg" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;"></span>
+          <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0; text-align: right;">
+            * Haz clic en cualquier fila para abrir la proyección gráfica de consumo.
+          </p>
         </div>
       </div>
 
-      <table class="table-dark">
-        <thead>
-          <tr>
-            <th class="sortable" onclick="setSort('sku')">SKU / Alias <span class="sort-icon" id="sort-sku"></span></th>
-            <th class="sortable" onclick="setSort('history')">Historial <span class="sort-icon" id="sort-history"></span></th>
-            <th class="sortable" onclick="setSort('burn')">Consumo <span class="sort-icon" id="sort-burn"></span></th>
-            <th class="sortable" onclick="setSort('stock')">Stock Est. <span class="sort-icon" id="sort-stock"></span></th>
-            <th class="sortable" onclick="setSort('urgency')">Estado Actual <span class="sort-icon" id="sort-urgency"></span></th>
-          </tr>
-        </thead>
-        <tbody id="inventoryTableBody"></tbody>
-      </table>
+    </div>
+  </main>
+
+  <!-- VENTANA FLOTANTE DEL GRÁFICO -->
+  <div id="chartModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h2 id="modalSkuTitle" style="color: var(--accent-cyan); font-size: 1.5rem; margin: 0;">SKU</h2>
+          <p id="modalAliasSubtitle" style="color: var(--text-muted); font-size: 0.9rem; margin: 4px 0 0 0;"></p>
+        </div>
+        <button onclick="closeModal()" class="btn-close-modal">&times;</button>
+      </div>
       
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-        <span id="hiddenCountMsg" style="font-size: 0.78rem; color: #64748b; font-weight: 600;"></span>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; text-align: right;">
-          * Haz clic en cualquier fila para ver la proyección gráfica.
-        </p>
+      <div style="margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-secondary btn-sm" onclick="renderChart(30)">Último Mes</button>
+        <button class="btn-secondary btn-sm" onclick="renderChart(180)">6 Meses</button>
+        <button class="btn-secondary btn-sm" onclick="renderChart(9999)">Histórico Total</button>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="stockChart"></canvas>
       </div>
     </div>
-
   </div>
-</div>
 
-<!-- VENTANA FLOTANTE DEL GRÁFICO -->
-<div id="chartModal" class="modal-overlay" style="display: none;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-      <div>
-        <h2 id="modalSkuTitle" style="color: var(--primary);">SKU</h2>
-        <p id="modalAliasSubtitle" style="color: var(--text-muted); font-size: 0.9rem; margin: 0;"></p>
-      </div>
-      <button onclick="closeModal()" class="btn-close-modal">&times;</button>
-    </div>
-    
-    <div style="margin-top: 16px; display: flex; gap: 8px;">
-      <button class="btn-secondary btn-sm" onclick="renderChart(30)">Último Mes</button>
-      <button class="btn-secondary btn-sm" onclick="renderChart(180)">6 Meses</button>
-      <button class="btn-secondary btn-sm" onclick="renderChart(9999)">Histórico Total</button>
-    </div>
-
-    <div class="chart-container">
-      <canvas id="stockChart"></canvas>
-    </div>
-  </div>
-</div>
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; LoomTech Motorsport — Electrónica y Servicios de Competición. Córdoba, Argentina.</p>
+  </footer>
 
 <script>
+  // =========================================================================
+  // INTERACCIONES VISUALES (NAVBAR SCROLL, HERO GLOW, REVEAL ON SCROLL)
+  // =========================================================================
+  const mainNav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 16) mainNav.classList.add('scrolled');
+    else mainNav.classList.remove('scrolled');
+  }, { passive: true });
+
+  const heroBanner = document.getElementById('heroBanner');
+  const interactiveTitle = document.getElementById('interactiveTitle');
+  if (heroBanner && interactiveTitle) {
+    heroBanner.addEventListener('mousemove', (e) => {
+      const rect = heroBanner.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      heroBanner.style.setProperty('--hero-x', `${x}%`);
+      heroBanner.style.setProperty('--hero-y', `${y}%`);
+      interactiveTitle.style.setProperty('--title-angle', `${70 + (x * 0.5)}deg`);
+    });
+  }
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, idx) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('is-visible'), idx * 70);
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObserver.observe(el));
+
+  function scrollInvoices(direction) {
+    const list = document.getElementById('loadedInvoicesList');
+    list.scrollBy({ left: direction * 240, behavior: 'smooth' });
+  }
+
+  // =========================================================================
+  // LÓGICA DEL GESTOR DE COMPRAS & MOTOR PREDICTIVO (INTACTA)
+  // =========================================================================
   let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
   let loadedInvoices = JSON.parse(localStorage.getItem('loomtech_invoices')) || [];
   let currentChart = null;
@@ -266,7 +882,7 @@
     const msg = document.getElementById('fileMsg');
     if(input.files && input.files.length > 0) {
       msg.innerText = `Archivo listo: ${input.files[0].name}`;
-      msg.style.color = '#34d399';
+      msg.style.color = 'var(--badge-green)';
     } else {
       msg.innerText = 'Haz clic o arrastra tu archivo .pdf o .csv aquí';
       msg.style.color = 'var(--text-muted)';
@@ -346,14 +962,13 @@
     } catch (err) {
       console.error(err);
       res.innerText = "Error al leer el archivo. Asegúrate de que contiene texto seleccionable.";
-      res.style.color = '#f87171';
+      res.style.color = '#ff6b6b';
     } finally {
       btn.innerText = "Leer Archivo y Procesar"; btn.disabled = false;
     }
   }
 
   function processExtractedText(text, fileName) {
-    const cleanText = text.replace(/["']/g, '');
     let dateStr = document.getElementById('invoiceDate').value;
     
     const dateRegex1 = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
@@ -401,7 +1016,7 @@
       
       const res = document.getElementById('importResult');
       res.innerText = `¡Éxito! Fecha: ${dateStr}. Se sumaron ${itemsFound} componentes.`;
-      res.style.color = '#34d399';
+      res.style.color = 'var(--badge-green)';
       
       document.getElementById('invoiceFile').value = ''; 
       updateFileName();
@@ -412,7 +1027,7 @@
     } else {
       const res = document.getElementById('importResult');
       res.innerText = `No se detectaron productos válidos.`;
-      res.style.color = '#f87171';
+      res.style.color = '#ff6b6b';
     }
   }
 
@@ -425,7 +1040,7 @@
     const list = document.getElementById('loadedInvoicesList');
     list.innerHTML = '';
     if (loadedInvoices.length === 0) {
-      list.innerHTML = '<li style="color: var(--text-muted); text-align: center; padding: 10px;">Sin cargas recientes</li>';
+      list.innerHTML = '<li style="color: var(--text-muted); text-align: center; padding: 14px; width: 100%;">Sin cargas recientes</li>';
       return;
     }
     
@@ -433,9 +1048,9 @@
       const li = document.createElement('li');
       li.className = 'invoice-item';
       li.innerHTML = `
-        <div>
-          <strong>${inv.name}</strong><br>
-          <span style="color: var(--text-muted);">${inv.date} | ${inv.count} ítems</span>
+        <div style="overflow: hidden;">
+          <strong title="${inv.name}">${inv.name}</strong>
+          <span style="color: var(--text-muted); font-size: 0.75rem;">${inv.date} &bull; ${inv.count} ítems</span>
         </div>
         <button class="btn-secondary btn-sm btn-danger" onclick="deleteInvoice('${inv.id}')" title="Eliminar y descontar items">🗑️</button>
       `;
@@ -475,7 +1090,6 @@
     renderInventory();
   }
 
-  // --- MOTOR PREDICTIVO CON UMBRALES INTELIGENTES Y DETECCIÓN DE INACTIVOS ---
   function calculatePredictiveStatus(item) {
     const history = item.history.sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
     const maxInactiveDays = parseInt(document.getElementById('activeWindowSelect')?.value || 365);
@@ -503,7 +1117,6 @@
         };
       }
     } else {
-      // Tomamos las últimas 6 compras para calcular el ritmo de consumo reciente (burn rate)
       const recentHistory = history.slice(-6);
       const firstRecentDate = new Date(recentHistory[0].date + "T12:00:00");
       const lastDate = new Date(recentHistory[recentHistory.length - 1].date + "T12:00:00");
@@ -522,14 +1135,12 @@
           alertThreshold: 0, urgentThreshold: 0, isInactive: isOldSameDay 
         };
       } else {
-        // 1. Calculamos el consumo diario sobre la ventana reciente
         let totalConsumed = 0;
         for (let i = 0; i < recentHistory.length - 1; i++) {
           totalConsumed += recentHistory[i].qty;
         }
         const dailyBurn = totalConsumed / totalRecentDays;
 
-        // 2. Simulamos el stock acumulado recorriendo TODA la historia para no perder remanentes previos
         let currentS = history[0].qty;
         for (let i = 1; i < history.length; i++) {
           const d1 = new Date(history[i-1].date + "T12:00:00");
@@ -548,7 +1159,6 @@
           estStock = todayS;
         }
 
-        // 3. Variables de lote y frecuencia para umbrales e inactividad
         const lastQty = recentHistory[recentHistory.length - 1].qty;
         const expectedLastBatchDuration = dailyBurn > 0 ? (lastQty / dailyBurn) : maxInactiveDays;
         const avgDaysBetweenPurchases = totalRecentDays / (recentHistory.length - 1);
@@ -556,14 +1166,12 @@
         const totalQtyBought = recentHistory.reduce((acc, h) => acc + h.qty, 0);
         const avgOrderQty = totalQtyBought / recentHistory.length;
 
-        // 4. Definimos umbrales basados en DÍAS DE COBERTURA (45 días Alerta, 21 días Urgente)
-        const targetAlertDays = 45;  // Días de anticipación para Alerta Amarilla
-        const targetUrgentDays = 21; // Días límite para Urgencia Roja
+        const targetAlertDays = 45;
+        const targetUrgentDays = 21;
 
         const roundedStock = Math.ceil(estStock);
         const daysLeft = dailyBurn > 0 ? (estStock / dailyBurn) : Infinity;
 
-        // El umbral en unidades será el stock para cubrir 45 días, o el 35% de una compra típica
         const alertThreshold = Math.max(1, Math.ceil(Math.max(dailyBurn * targetAlertDays, avgOrderQty * 0.35)));
         const urgentThreshold = Math.max(1, Math.ceil(Math.max(dailyBurn * targetUrgentDays, avgOrderQty * 0.18)));
 
@@ -571,7 +1179,6 @@
         let statusText = 'En Stock'; 
         let priority = 3;
 
-        // 5. Verificar si el ítem fue abandonado / descontinuado
         const isAbandoned = roundedStock === 0 && 
                             daysToToday > maxInactiveDays && 
                             daysToToday > Math.min(expectedLastBatchDuration * 2, avgDaysBetweenPurchases * 2.5);
@@ -581,7 +1188,6 @@
           statusText = 'Inactivo';
           priority = 4.5;
         } else if (daysLeft <= 60) { 
-          // Solo evaluamos alertas si nos quedan menos de 60 días de autonomía
           if (roundedStock <= urgentThreshold || daysLeft <= targetUrgentDays) { 
             badge = 'status-red'; statusText = 'Urgente'; priority = 1;
           } else if (roundedStock <= alertThreshold || daysLeft <= targetAlertDays) { 
@@ -600,7 +1206,6 @@
       }
     }
 
-    // Si el usuario eligió "No Seguir" manualmente
     if (item.doNotTrack) {
       baseStatus.badge = 'status-dark';
       baseStatus.statusText = 'No Seguir';
@@ -634,8 +1239,23 @@
     }
 
     const keys = Object.keys(inventory);
+
+    // Actualizar KPIs globales en el Hero
+    let countUrgent = 0, countAlert = 0, countOk = 0;
+    keys.forEach(k => {
+      const st = calculatePredictiveStatus(inventory[k]);
+      if (!st.isInactive) {
+        if (st.priority === 1) countUrgent++;
+        else if (st.priority === 2) countAlert++;
+        else if (st.priority === 3) countOk++;
+      }
+    });
+    document.getElementById('kpiUrgent').innerText = countUrgent;
+    document.getElementById('kpiAlert').innerText = countAlert;
+    document.getElementById('kpiOk').innerText = countOk;
+
     if (keys.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">El radar está vacío. Sube tu primer archivo PDF o CSV.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 40px;">El radar está vacío. Sube tu primer archivo PDF o CSV en el panel izquierdo.</td></tr>';
       return;
     }
 
@@ -652,7 +1272,6 @@
 
     let itemsWithStats = filteredItems.map(item => ({ item: item, stats: calculatePredictiveStatus(item) }));
     
-    // Si "Ocultar Inactivos" está tildado y NO se está buscando algo específico en el buscador, filtramos inactivos
     let hiddenCount = 0;
     if (hideInactive && searchTerm === '') {
       const beforeCount = itemsWithStats.length;
@@ -667,12 +1286,11 @@
     if (itemsWithStats.length === 0) {
       const emptyText = hiddenCount > 0 
         ? `No hay ítems activos para mostrar (${hiddenCount} inactivos ocultos). Destilda "Ocultar Inactivos" para verlos.`
-        : `No hay resultados.`;
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">${emptyText}</td></tr>`;
+        : `No hay resultados para "${searchTerm}".`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 40px;">${emptyText}</td></tr>`;
       return;
     }
 
-    // Motor de Ordenamiento
     itemsWithStats.sort((a, b) => {
       let valA, valB;
       switch(currentSortColumn) {
@@ -712,7 +1330,9 @@
     itemsWithStats.forEach(data => {
       const { item, stats } = data;
       const buyCount = item.history.length;
-      const displayName = item.alias ? `<strong style="color: #fff; font-size:1.05rem;">${item.alias}</strong><br><span style="color: #64748b; font-size:0.8rem;">${item.sku}</span>` : `<strong style="color: #fff;">${item.sku}</strong>`;
+      const displayName = item.alias
+        ? `<strong style="color: #fff; font-size: 1rem;">${item.alias}</strong><br><span style="color: var(--text-muted); font-size: 0.78rem;">${item.sku}</span>`
+        : `<strong style="color: #fff;">${item.sku}</strong>`;
       
       const displayBurn = stats.dailyBurn > 0 ? `${(stats.dailyBurn * frameDays).toFixed(1)} U` : '-';
       
@@ -729,12 +1349,12 @@
           <div style="display:flex; align-items: center;">
             <div>${displayName}</div>
             <button class="btn-edit-alias" onclick="editAlias(event, '${item.sku}')" title="Asignar Alias">✏️</button>
-            <button class="btn-edit-alias" onclick="toggleTracking(event, '${item.sku}')" title="${trackTitle}" style="font-size:1.1rem;">${trackIcon}</button>
+            <button class="btn-edit-alias" onclick="toggleTracking(event, '${item.sku}')" title="${trackTitle}">${trackIcon}</button>
           </div>
         </td>
-        <td style="color: #94a3b8;">${buyCount} fact.</td>
-        <td style="color: #34d399; font-family: monospace; font-size: 0.95rem;">${displayBurn}</td>
-        <td style="font-weight: bold; font-size: 1.1rem; color: #fff;">${stats.estStock}</td>
+        <td style="color: var(--text-muted); font-weight: 600;">${buyCount} fact.</td>
+        <td style="color: var(--badge-green); font-family: monospace; font-size: 0.95rem; font-weight: 700;">${displayBurn}</td>
+        <td style="font-weight: 800; font-size: 1.1rem; color: #fff;">${stats.estStock}</td>
         <td>
           <div class="status-badge ${stats.badge}">
             <span class="pulse-dot"></span> ${stats.statusText}
@@ -745,7 +1365,6 @@
     });
   }
 
-  // --- MOTOR GRÁFICO (MODAL Y CHART.JS) ---
   function openModal(sku) {
     activeChartSku = sku;
     const item = inventory[sku];
@@ -817,17 +1436,17 @@
     const warningThreshold = stats.alertThreshold || 0;
     let thresholdData = [];
     if(filteredData.length > 0 && warningThreshold > 0) {
-        thresholdData = [
-            { x: filteredData[0].x, y: warningThreshold },
-            { x: filteredData[filteredData.length - 1].x, y: warningThreshold }
-        ];
+      thresholdData = [
+        { x: filteredData[0].x, y: warningThreshold },
+        { x: filteredData[filteredData.length - 1].x, y: warningThreshold }
+      ];
     }
 
     if(currentChart) { currentChart.destroy(); }
     const ctx = document.getElementById('stockChart').getContext('2d');
     
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = 'system-ui';
+    Chart.defaults.color = '#a7a7a7';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui";
 
     currentChart = new Chart(ctx, {
       type: 'line',
@@ -836,11 +1455,11 @@
           {
             label: 'Stock Estimado',
             data: filteredData,
-            borderColor: '#3b5bfd',
-            backgroundColor: 'rgba(59, 91, 253, 0.2)',
+            borderColor: '#00d4ff',
+            backgroundColor: 'rgba(59, 91, 253, 0.22)',
             borderWidth: 3,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#3b5bfd',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#00d4ff',
             pointRadius: 4,
             fill: true,
             tension: 0 
@@ -848,9 +1467,9 @@
           {
             label: `Punto de Pedido Sugerido (${warningThreshold} U)`,
             data: thresholdData,
-            borderColor: 'rgba(245, 158, 11, 0.8)',
+            borderColor: 'rgba(245, 158, 11, 0.85)',
             borderWidth: 2,
-            borderDash: [5, 5],
+            borderDash: [6, 6],
             pointRadius: 0,
             fill: false,
             tension: 0
@@ -861,7 +1480,7 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, labels: { color: '#94a3b8' } },
+          legend: { display: true, labels: { color: '#ffffff', font: { weight: 'bold' } } },
           tooltip: {
             callbacks: {
               title: function(context) { return formatDDMMAA(new Date(context[0].parsed.x)); }
@@ -869,7 +1488,7 @@
           }
         },
         scales: {
-          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' } },
           x: { 
             type: 'linear',
             grid: { display: false }, 
