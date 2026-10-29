@@ -5,188 +5,936 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LoomTech - Motorsport Hub & Utilidades</title>
   
-  <!-- Vinculamos el CSS General (Misma carpeta) -->
+  <!-- Vinculamos el CSS General -->
   <link rel="stylesheet" href="general.css">
 
   <style>
     /* ==========================================================================
-       ESTILOS ESPECÍFICOS DEL HUB (Sobreescribe a modo oscuro)
+       ESTILOS DEL HUB (DIRECCIÓN ESTÉTICA DARK STREAMING & GLASMORFISMO)
        ========================================================================== */
-    :root {
-      --bg-body: #0b0f17;
-      --bg-panel: #131b2e;
-      --border: #1e293b;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-
     body {
-      background: radial-gradient(circle at top, #18223d 0%, var(--bg-body) 65%);
+      padding: 0;
+      background-color: var(--bg-body);
+      background-image: 
+        radial-gradient(at 15% 0%, rgba(59, 91, 253, 0.26) 0px, transparent 50%),
+        radial-gradient(at 85% 5%, rgba(0, 212, 255, 0.14) 0px, transparent 45%);
+      background-attachment: fixed;
       display: flex;
       flex-direction: column;
     }
 
-    /* Cabecera Principal */
-    header {
+    /* --- 1. NAVBAR FIJA CON GLASMORFISMO SUTIL --- */
+    .navbar-glass {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: rgba(18, 18, 18, 0.72);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .navbar-glass.scrolled {
+      background: rgba(12, 12, 14, 0.88);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 24px;
-      background: rgba(19, 27, 46, 0.85);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      backdrop-filter: blur(10px);
-      margin-bottom: 32px;
-      gap: 20px;
+      gap: 16px;
     }
 
-    .brand { display: flex; align-items: center; gap: 16px; }
-    .brand img { width: 58px; height: 58px; object-fit: contain; }
-    .brand h1 { font-size: 1.5rem; letter-spacing: -0.5px; color: #fff; margin: 0; }
-    .brand p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(59, 91, 253, 0.25), rgba(0, 212, 255, 0.1));
+      border: 1px solid rgba(59, 91, 253, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: transform 0.25s ease;
+    }
+
+    .brand:hover .brand-logo-wrap {
+      transform: rotate(-4deg) scale(1.06);
+    }
+
+    .brand img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .brand p {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (min-width: 820px) {
+      .nav-links {
+        display: flex;
+      }
+      .nav-inner {
+        padding: 16px 32px;
+      }
+    }
+
+    .nav-pill {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
 
     .badge-status {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-      color: var(--badge-green); font-size: 0.78rem; font-weight: 600;
-      padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--badge-green); box-shadow: 0 0 8px var(--badge-green); }
-
-    /* Hero / Sección de Bienvenida */
-    .hero { margin-bottom: 30px; padding: 0 8px; }
-    .hero h2 { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
-    .hero p { color: var(--text-muted); max-width: 650px; line-height: 1.5; font-size: 0.95rem; }
-
-    /* Grilla de Herramientas */
-    .grid-tools {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 20px; margin-bottom: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 215, 96, 0.12);
+      border: 1px solid rgba(30, 215, 96, 0.3);
+      color: var(--badge-green);
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--badge-green);
+      box-shadow: 0 0 10px var(--badge-green);
+      animation: pulseAnim 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseAnim {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.65; }
+    }
+
+    /* --- 2. CONTENEDOR PRINCIPAL --- */
+    .main-wrapper {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px 60px 20px;
+      flex: 1;
+    }
+
+    @media (min-width: 768px) {
+      .main-wrapper {
+        padding: 36px 32px 80px 32px;
+      }
+    }
+
+    /* --- 3. HERO CON DEGRADADO COLORIDO Y TÍTULO INTERACTIVO --- */
+    .hero-banner {
+      position: relative;
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      margin-bottom: 40px;
+      background: 
+        radial-gradient(800px circle at var(--hero-x, 20%) var(--hero-y, 30%), rgba(59, 91, 253, 0.42), transparent 55%),
+        linear-gradient(135deg, #1b2442 0%, #141824 55%, #181818 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-banner {
+        padding: 48px 44px;
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+    }
+
+    /* Circuito decorativo de fondo en el Hero */
+    .hero-bg-svg {
+      position: absolute;
+      right: -30px;
+      bottom: -40px;
+      width: 320px;
+      opacity: 0.08;
+      pointer-events: none;
+      transform: rotate(-8deg);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+    }
+
+    /* Título interactivo de gran tamaño */
+    .interactive-title {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      margin-bottom: 14px;
+      background: linear-gradient(
+        var(--title-angle, 95deg),
+        #ffffff 0%,
+        #dbe4ff 45%,
+        #00d4ff 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: transform 0.2s ease;
+      cursor: default;
+    }
+
+    .hero-subtitle {
+      color: #cbd5e1;
+      font-size: clamp(0.92rem, 1.5vw, 1.05rem);
+      font-weight: 500;
+      max-width: 560px;
+      line-height: 1.55;
+    }
+
+    /* Accesos rápidos tipo "Quick Picks" de Spotify */
+    .quick-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .quick-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 8px 16px 8px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 0.84rem;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .quick-pill-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .quick-pill-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .quick-pill:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .quick-pill:hover .quick-pill-icon {
+      background: var(--accent-cyan);
+      color: #0b0f17;
+      transform: scale(1.08);
+    }
+
+    /* --- 4. CABECERA DE SECCIÓN Y CONTROLES DE CARRUSEL --- */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .section-title-group h2 {
+      font-size: clamp(1.4rem, 3vw, 1.85rem);
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .section-title-group p {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .view-toggle-btn {
+      background: #181818;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .view-toggle-btn.active, .view-toggle-btn:hover {
+      color: #ffffff;
+      background: #282828;
+      border-color: var(--border-hover);
+    }
+
+    .nav-arrow {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #181818;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .nav-arrow:hover {
+      background: #2a2a2a;
+      border-color: var(--border-hover);
+      transform: scale(1.08);
+    }
+
+    .nav-arrow:active {
+      transform: scale(0.95);
+    }
+
+    .nav-arrow svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* --- 5. CARRUSEL HORIZONTAL SUAVE / GRILLA DINÁMICA --- */
+    .tools-track {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      padding: 8px 4px 24px 4px;
+      margin: -8px -4px 20px -4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tools-track::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .tools-track .tool-card {
+      flex: 0 0 85%;
+      scroll-snap-align: start;
+    }
+
+    @media (min-width: 600px) {
+      .tools-track .tool-card {
+        flex: 0 0 330px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .tools-track .tool-card {
+        flex: 0 0 350px;
+      }
+    }
+
+    /* Modo Grilla Completa (Alternable) */
+    .tools-track.grid-mode {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      overflow-x: visible;
+    }
+
+    .tools-track.grid-mode .tool-card {
+      flex: unset;
+    }
+
+    /* --- 6. TARJETAS DE MÓDULOS ESTILO SPOTIFY --- */
     .tool-card {
-      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 14px;
-      padding: 24px; display: flex; flex-direction: column; justify-content: space-between;
-      text-decoration: none; color: inherit; position: relative; overflow: hidden;
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      transition: 
+        transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.28s ease,
+        border-color 0.28s ease,
+        box-shadow 0.28s ease;
     }
+
+    /* Resplandor radial que sigue al mouse dentro de cada tarjeta */
+    .tool-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--grad-card-glow);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    /* Banda superior de color sutil */
+    .card-accent-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--grad-brand);
+      opacity: 0.7;
+      transition: height 0.25s ease, opacity 0.25s ease;
+    }
+
     .tool-card:hover {
-      transform: translateY(-4px); border-color: var(--primary);
-      box-shadow: 0 10px 25px -5px rgba(59, 91, 253, 0.25);
+      transform: translateY(-6px);
+      background-color: var(--bg-card-hover);
+      border-color: rgba(59, 91, 253, 0.45);
+      box-shadow: var(--shadow-hover);
     }
-    .tool-card.disabled { opacity: 0.6; cursor: not-allowed; border-style: dashed; }
-    .tool-card.disabled:hover { transform: none; border-color: var(--border); box-shadow: none; }
 
-    .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-    
+    .tool-card:hover::before {
+      opacity: 1;
+    }
+
+    .tool-card:hover .card-accent-bar {
+      opacity: 1;
+      height: 5px;
+    }
+
+    .tool-card.disabled {
+      opacity: 0.58;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+
+    .tool-card.disabled:hover {
+      transform: translateY(-2px);
+      background-color: #1c1c1c;
+      border-color: var(--border);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
     .icon-box {
-      width: 46px; height: 46px; background: rgba(59, 91, 253, 0.12); color: var(--primary);
-      display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(59, 91, 253, 0.25);
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, rgba(59, 91, 253, 0.22) 0%, rgba(0, 212, 255, 0.08) 100%);
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      border: 1px solid rgba(59, 91, 253, 0.3);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      transition: transform 0.25s ease, color 0.25s ease, background 0.25s ease;
     }
-    .icon-box svg { width: 22px; height: 22px; }
 
-    .tag-state { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
-    .tag-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .tag-soon { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .tool-card:hover .icon-box {
+      transform: scale(1.06);
+      color: #ffffff;
+      background: var(--grad-brand);
+    }
 
-    .tool-card h3 { font-size: 1.15rem; color: #fff; margin-bottom: 8px; }
-    .tool-card p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.4; flex-grow: 1; margin-bottom: 18px; }
-    
-    .card-action { font-size: 0.85rem; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px; }
-    .tool-card:hover .card-action { text-decoration: underline; }
+    .icon-box svg {
+      width: 26px;
+      height: 26px;
+    }
 
-    footer { border-top: 1px solid var(--border); padding: 20px 8px; text-align: center; color: var(--text-muted); font-size: 0.82rem; margin-top: auto; }
+    .tag-state {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
 
-    @media (max-width: 650px) {
-      header { flex-direction: column; align-items: flex-start; }
+    .tag-active {
+      background: rgba(30, 215, 96, 0.14);
+      color: var(--badge-green);
+      border: 1px solid rgba(30, 215, 96, 0.3);
+    }
+
+    .tag-soon {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .card-body {
+      position: relative;
+      z-index: 1;
+      flex-grow: 1;
+    }
+
+    .tool-card h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+      transition: color 0.2s ease;
+    }
+
+    .tool-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .card-action {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+    }
+
+    .tool-card:hover .card-action {
+      color: var(--accent-cyan);
+    }
+
+    /* Botón circular flotante de acción (inspirado en el botón Play de las cards de Spotify) */
+    .play-launch-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 18px rgba(59, 91, 253, 0.45);
+      transform: translateY(6px);
+      opacity: 0.85;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .tool-card:hover .play-launch-btn {
+      transform: translateY(0) scale(1.08);
+      opacity: 1;
+      background: var(--accent-cyan);
+      color: #0b0f17;
+      box-shadow: 0 10px 24px rgba(0, 212, 255, 0.45);
+    }
+
+    .play-launch-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* --- 7. ANIMACIONES AL HACER SCROLL (REVEAL PROGRESIVO) --- */
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- 8. FOOTER --- */
+    footer {
+      border-top: 1px solid var(--border);
+      background: #0c0c0c;
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-top: auto;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <!-- Cabecera -->
-  <header>
-    <div class="brand">
-      <img src="logo-transparente.webp" alt="LoomTech Motorsport" onerror="this.style.display='none'">
-      <div>
-        <h1>LoomTech</h1>
-        <p>Centro de Herramientas</p>
+  <!-- BARRA DE NAVEGACIÓN FIJA CON GLASMORFISMO -->
+  <nav class="navbar-glass" id="mainNav">
+    <div class="nav-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-logo-wrap">
+          <img src="logo-transparente.webp" alt="LoomTech Motorsport" onerror="this.style.display='none'">
+        </div>
+        <div>
+          <h1>LoomTech</h1>
+          <p>Centro de Herramientas</p>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="facturador.html" class="nav-pill">Comprobantes</a>
+        <a href="gestor-compras.html" class="nav-pill">Gestor de Compras</a>
+        <a href="cableados.html" class="nav-pill">Pinouts & Mazos</a>
+      </div>
+
+      <div class="badge-status">
+        <span class="pulse"></span> Online
       </div>
     </div>
-    <div class="badge-status">
-      <span class="pulse"></span> Online
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-wrapper">
+
+    <!-- HERO DESTACADO CON DEGRADADO SUAVE Y TÍTULO INTERACTIVO -->
+    <section class="hero-banner reveal-on-scroll" id="heroBanner">
+      <!-- Marca de agua vectorial sutil -->
+      <svg class="hero-bg-svg" viewBox="0 0 320 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 252 82 L 268 46 L 152 46 L 142 68 L 252 120 L 244 142 L 116 142 L 138 110" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 78 82 L 114 82 L 56 178 L 188 178 L 172 210 L 48 210" stroke="#00d4ff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="252" cy="82" r="14" fill="#121212" stroke="#ffffff" stroke-width="10"/>
+        <circle cx="138" cy="110" r="14" fill="#121212" stroke="#ffffff" stroke-width="10"/>
+        <circle cx="78" cy="82" r="14" fill="#121212" stroke="#00d4ff" stroke-width="10"/>
+        <circle cx="48" cy="210" r="14" fill="#121212" stroke="#00d4ff" stroke-width="10"/>
+      </svg>
+
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <span>⚡ Motorsport Electronics Suite</span>
+        </div>
+        <h2 class="interactive-title" id="interactiveTitle">Módulos y Herramientas</h2>
+        <p class="hero-subtitle">
+          Gestión integral para electrónica de competición: presupuestos y órdenes de trabajo, control predictivo de stock de insumos y conversión bidireccional de planos de cableado.
+        </p>
+
+        <!-- Accesos rápidos en píldoras -->
+        <div class="quick-pills">
+          <a href="facturador.html" class="quick-pill">
+            <span class="quick-pill-icon">
+              <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </span>
+            Emitir Comprobante
+          </a>
+
+          <a href="gestor-compras.html" class="quick-pill">
+            <span class="quick-pill-icon">
+              <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </span>
+            Radar de Stock
+          </a>
+
+          <a href="cableados.html" class="quick-pill">
+            <span class="quick-pill-icon">
+              <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </span>
+            Conversor .harness / Excel
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CABECERA DE CARRUSEL / GRILLA DE APLICACIONES -->
+    <div class="section-header reveal-on-scroll">
+      <div class="section-title-group">
+        <h2>Aplicaciones del Taller</h2>
+        <p>Desliza horizontalmente o selecciona una herramienta para comenzar</p>
+      </div>
+
+      <div class="carousel-controls">
+        <button type="button" class="view-toggle-btn active" id="btnViewCarousel" onclick="setTrackLayout('carousel')">
+          Carrusel
+        </button>
+        <button type="button" class="view-toggle-btn" id="btnViewGrid" onclick="setTrackLayout('grid')">
+          Ver Todo
+        </button>
+        <button type="button" class="nav-arrow" id="btnPrev" onclick="scrollTools(-1)" aria-label="Anterior">
+          <svg fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <button type="button" class="nav-arrow" id="btnNext" onclick="scrollTools(1)" aria-label="Siguiente">
+          <svg fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
     </div>
-  </header>
 
-  <!-- Hero -->
-  <div class="hero">
-    <h2>Módulos y Herramientas</h2>
-  </div>
+    <!-- CARRUSEL HORIZONTAL CON SCROLL SUAVE DE TARJETAS -->
+    <div class="tools-track" id="toolsTrack">
 
-  <!-- Grid de Utilidades -->
-  <div class="grid-tools">
-
-    <!-- Tarjeta 1: Facturación -->
-    <a href="facturador.html" class="tool-card">
-      <div class="card-top">
-        <div class="icon-box">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
+      <!-- Tarjeta 1: Facturación -->
+      <a href="facturador.html" class="tool-card reveal-on-scroll">
+        <div class="card-accent-bar"></div>
+        <div class="card-top">
+          <div class="icon-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <span class="tag-state tag-active">Activo</span>
         </div>
-        <span class="tag-state tag-active">Activo</span>
-      </div>
-      <h3>Generador de Comprobantes</h3>
-      <p>Emisión de presupuestos, órdenes de trabajo, facturas y recibos con soporte para datos de rally (categoría, piloto, chasis).</p>
-      <div class="card-action">
-        Abrir aplicación &rarr;
-      </div>
-    </a>
-
-    <!-- Tarjeta 2: Gestor de Compras -->
-    <a href="gestor-compras.html" class="tool-card">
-      <div class="card-top">
-        <div class="icon-box">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
+        <div class="card-body">
+          <h3>Generador de Comprobantes</h3>
+          <p>Emisión de presupuestos, órdenes de trabajo, facturas y recibos con soporte para datos de rally (categoría, piloto, chasis).</p>
         </div>
-        <span class="tag-state tag-active">Activo</span>
-      </div>
-      <h3>Gestor de compras</h3>
-      <p>Cálculo de existencias según historial y recordatorios de compra.</p>
-      <div class="card-action">
-        Abrir aplicación &rarr;
-      </div>
-    </a>
-
-    <!-- Tarjeta 3: Unificador de Pinouts (NUEVA PÁGINA) -->
-    <a href="cableados.html" class="tool-card">
-      <div class="card-top">
-        <div class="icon-box">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
+        <div class="card-footer">
+          <div class="card-action">Abrir aplicación</div>
+          <div class="play-launch-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </div>
         </div>
-        <span class="tag-state tag-active">Activo</span>
-      </div>
-      <h3>Unificador de Pinouts</h3>
-      <p>Reestructura archivos Excel de cableados unificando todas las hojas de conectores en una sola pestaña lista para Google Sheets.</p>
-      <div class="card-action">
-        Abrir aplicación &rarr;
-      </div>
-    </a>
+      </a>
 
-    <!-- Tarjeta 4: Setup & Set de Neumáticos (Próximamente) -->
-    <div class="tool-card disabled">
-      <div class="card-top">
-        <div class="icon-box">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
+      <!-- Tarjeta 2: Gestor de Compras -->
+      <a href="gestor-compras.html" class="tool-card reveal-on-scroll">
+        <div class="card-accent-bar"></div>
+        <div class="card-top">
+          <div class="icon-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <span class="tag-state tag-active">Activo</span>
         </div>
-        <span class="tag-state tag-soon">Próximamente</span>
+        <div class="card-body">
+          <h3>Gestor de compras</h3>
+          <p>Cálculo de existencias según historial y recordatorios de compra.</p>
+        </div>
+        <div class="card-footer">
+          <div class="card-action">Abrir aplicación</div>
+          <div class="play-launch-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </a>
+
+      <!-- Tarjeta 3: Unificador y Conversor de Pinouts -->
+      <a href="cableados.html" class="tool-card reveal-on-scroll">
+        <div class="card-accent-bar"></div>
+        <div class="card-top">
+          <div class="icon-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <span class="tag-state tag-active">Activo</span>
+        </div>
+        <div class="card-body">
+          <h3>Unificador de Pinouts</h3>
+          <p>Conversión bidireccional entre planillas Excel de cableados y archivos .harness con librería Deutsch integrada.</p>
+        </div>
+        <div class="card-footer">
+          <div class="card-action">Abrir aplicación</div>
+          <div class="play-launch-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </a>
+
+      <!-- Tarjeta 4: Setup & Set de Neumáticos (Próximamente) -->
+      <div class="tool-card disabled reveal-on-scroll">
+        <div class="card-top">
+          <div class="icon-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <span class="tag-state tag-soon">Próximamente</span>
+        </div>
+        <div class="card-body">
+          <h3>Planilla de Setup & Presiones</h3>
+          <p>Registro de presiones en frío/caliente, compuestos de neumáticos, dureza de barra estabilizadora y clics de amortiguación.</p>
+        </div>
+        <div class="card-footer">
+          <div class="card-action" style="color: var(--text-muted);">En desarrollo</div>
+        </div>
       </div>
-      <h3>Planilla de Setup & Presiones</h3>
-      <p>Registro de
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; LoomTech Motorsport — Electrónica y Servicios de Competición. Córdoba, Argentina.</p>
+  </footer>
+
+  <!-- SCRIPTS DE INTERACCIÓN Y ANIMACIONES LIGERA SIN DEPENDENCIAS PESADAS -->
+  <script>
+    // 1. Efecto de barra de navegación al hacer scroll
+    const mainNav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 16) {
+        mainNav.classList.add('scrolled');
+      } else {
+        mainNav.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    // 2. Navegación horizontal suave del carrusel
+    const toolsTrack = document.getElementById('toolsTrack');
+    function scrollTools(direction) {
+      const cardWidth = 360;
+      toolsTrack.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
+    }
+
+    // Alternar entre vista Carrusel y Grilla Completa
+    function setTrackLayout(mode) {
+      const isGrid = mode === 'grid';
+      toolsTrack.classList.toggle('grid-mode', isGrid);
+      document.getElementById('btnViewCarousel').classList.toggle('active', !isGrid);
+      document.getElementById('btnViewGrid').classList.toggle('active', isGrid);
+      document.getElementById('btnPrev').style.display = isGrid ? 'none' : 'inline-flex';
+      document.getElementById('btnNext').style.display = isGrid ? 'none' : 'inline-flex';
+    }
+
+    // 3. Iluminación interactiva en el Hero y en las Tarjetas según posición del cursor
+    const heroBanner = document.getElementById('heroBanner');
+    const interactiveTitle = document.getElementById('interactiveTitle');
+
+    heroBanner.addEventListener('mousemove', (e) => {
+      const rect = heroBanner.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      heroBanner.style.setProperty('--hero-x', `${x}%`);
+      heroBanner.style.setProperty('--hero-y', `${y}%`);
+      interactiveTitle.style.setProperty('--title-angle', `${70 + (x * 0.5)}deg`);
+    });
+
+    document.querySelectorAll('.tool-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+      });
+    });
+
+    // 4. Aparición progresiva al hacer scroll (IntersectionObserver nativo)
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, idx) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.add('is-visible');
+          }, idx * 70);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

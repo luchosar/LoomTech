@@ -1,141 +1,250 @@
 /* ==========================================================================
-   LOOMTECH MOTORSPORT - SISTEMA DE ESTILOS GENERALES
+   LOOMTECH MOTORSPORT - SISTEMA DE DISEÑO DARK STREAMING (ESTILO SPOTIFY)
    ========================================================================== */
 
-:root {
-  /* Colores de Marca */
-  --primary: #3b5bfd;
-  --primary-dark: #2546e0;
-  --accent: #ef4444;       /* Rojo Rally para alertas/borrar */
-  --badge-green: #10b981;  /* Verde para estados online/ok */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-  /* Colores UI (Tema claro por defecto para las herramientas) */
-  --bg-body: #f8fafc;
-  --bg-panel: #ffffff;
-  --border: #e2e8f0;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
+:root {
+  /* Paleta Base Oscura (#121212) */
+  --bg-body: #121212;
+  --bg-elevated: #181818;
+  --bg-panel: #181818;
+  --bg-card-hover: #242424;
+  --bg-highlight: #2a2a2a;
+  --bg-glass: rgba(18, 18, 18, 0.72);
+
+  /* Acentos Vivos (Azules LoomTech + Cian Eléctrico) */
+  --primary: #3b5bfd;
+  --primary-bright: #5c7cfa;
+  --primary-dark: #2546e0;
+  --accent-cyan: #00d4ff;
+  --accent: #ef4444;
+  --badge-green: #1ed760; /* Verde vibrante estilo indicador activo */
+
+  /* Degradados Atmosféricos */
+  --grad-hero: linear-gradient(135deg, rgba(59, 91, 253, 0.38) 0%, rgba(0, 212, 255, 0.14) 45%, rgba(18, 18, 18, 0) 100%);
+  --grad-brand: linear-gradient(90deg, #3b5bfd 0%, #00d4ff 100%);
+  --grad-card-glow: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 91, 253, 0.14), transparent 40%);
+
+  /* Textos y Bordes */
+  --text-main: #ffffff;
+  --text-muted: #a7a7a7;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.2);
+
+  /* Sombras y Radios */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 16px 36px rgba(0, 0, 0, 0.65);
 
   /* Tipografía */
-  --font-base: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-base: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* --- 1. RESET Y BASE --- */
+/* --- 1. RESET Y BASE MOBILE-FIRST --- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-base);
-  background: var(--bg-body);
+  background-color: var(--bg-body);
   color: var(--text-main);
-  padding: 24px;
   min-height: 100vh;
+  padding: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding: 24px 32px;
+  }
+}
+
+/* Scrollbar personalizada estilo reproductor oscuro */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555555;
 }
 
 h1, h2, h3, h4 {
-  color: #0f172a;
+  color: var(--text-main);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   margin-bottom: 0.5rem;
 }
 
 h2 {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.35rem;
 }
 
-/* --- 2. LAYOUT Y GRILLAS UTILITARIAS --- */
+/* --- 2. LAYOUT Y CONTENEDORES --- */
 .container {
-  max-width: 960px;
+  max-width: 1280px;
   margin: 0 auto;
+  width: 100%;
 }
 
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: 14px; }
 
-.panel {
-  background: var(--bg-panel);
+@media (min-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel, .import-panel, .table-panel, .control-panel, .preview-panel {
+  background: var(--bg-panel) !important;
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border: 1px solid var(--border);
-  height: fit-content;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border) !important;
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
 }
 
 /* --- 3. FORMULARIOS E INPUTS --- */
 label {
   display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin-top: 14px;
-  margin-bottom: 5px;
-  color: #475569;
+  margin-bottom: 6px;
+  color: var(--text-muted);
 }
 
 input, textarea, select {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 11px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-family: var(--font-base);
   color: var(--text-main);
-  background: var(--bg-panel);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #242424;
+  transition: all 0.2s ease;
+}
+
+input:hover, textarea:hover, select:hover {
+  background: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 input:focus, textarea:focus, select:focus {
   outline: none;
+  background: #2a2a2a;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(59, 91, 253, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 91, 253, 0.25);
 }
 
-/* --- 4. BOTONES --- */
+/* --- 4. BOTONES CON MICROINTERACCIONES (PILL STYLE) --- */
 .btn {
-  background: var(--primary);
-  color: white;
+  background: var(--grad-brand);
+  color: #ffffff;
   border: none;
-  padding: 12px 16px;
-  border-radius: 6px;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: background-color 0.2s;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(59, 91, 253, 0.35);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-.btn:hover { background: var(--primary-dark); }
-.btn-block { width: 100%; margin-top: 20px; } /* Para botones que ocupan todo el ancho */
+.btn:hover {
+  transform: scale(1.03) translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 28px rgba(59, 91, 253, 0.5);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 20px;
+}
 
 .btn-secondary {
-  background: #f1f5f9;
-  color: #334155;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-main);
   border: 1px solid var(--border);
-  padding: 8px 12px;
+  padding: 9px 18px;
   font-size: 0.85rem;
-  border-radius: 6px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.btn-secondary:hover { background: #e2e8f0; }
-.btn-sm { padding: 4px 10px; font-size: 0.8rem; margin-left: 4px; }
-.btn-danger { color: var(--accent); }
-.btn-danger:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--border-hover);
+  transform: scale(1.03);
+}
 
-/* --- 5. COMPONENTES ESPECÍFICOS (Switches, Tablas) --- */
-.switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}
+
+.btn-danger {
+  color: #ff6b6b;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ff8787;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* --- 5. SWITCHES Y TABLAS --- */
+.switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
-.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3e3e3e; transition: .3s; border-radius: 26px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--primary); }
 input:checked + .slider:before { transform: translateX(20px); }
 
 .table-ui { width: 100%; border-collapse: collapse; margin-top: 16px; }
-.table-ui th, .table-ui td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
-.table-ui th { background: #f8fafc; color: #475569; font-weight: 600; }
+.table-ui th, .table-ui td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+.table-ui th { background: #202020; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
 .text-right { text-align: right !important; }
