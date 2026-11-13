@@ -529,6 +529,26 @@
       transform: scale(1.1);
     }
 
+    .price-badge {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 212, 255, 0.28);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.86rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .price-badge:hover {
+      background: rgba(0, 212, 255, 0.22);
+      transform: scale(1.04);
+    }
+
     /* Insignias de estado estilo píldora */
     .status-badge {
       display: inline-flex;
@@ -608,7 +628,6 @@
       margin-top: 20px;
     }
 
-    /* Animaciones al hacer scroll */
     .reveal-on-scroll {
       opacity: 0;
       transform: translateY(20px);
@@ -648,6 +667,7 @@
 
       <div class="nav-links">
         <a href="index.html" class="nav-pill">Hub Principal</a>
+        <a href="presupuestador.html" class="nav-pill">Cotizador</a>
         <a href="facturador.html" class="nav-pill">Comprobantes</a>
         <a href="gestor-compras.html" class="nav-pill active">Gestor de Compras</a>
         <a href="cableados.html" class="nav-pill">Pinouts & Mazos</a>
@@ -665,10 +685,10 @@
     <!-- HERO DESTACADO CON DEGRADADO Y KPIS EN VIVO -->
     <section class="page-hero reveal-on-scroll" id="heroBanner">
       <div>
-        <div class="hero-eyebrow">⚡ Burn Rate & Stock Intelligence</div>
-        <h2 class="interactive-title" id="interactiveTitle">Gestor de Insumos & Radar</h2>
+        <div class="hero-eyebrow">⚡ Burn Rate, Stock & ProWireUSA Price Capture</div>
+        <h2 class="interactive-title" id="interactiveTitle">Gestor de Insumos & Precios</h2>
         <p class="hero-subtitle">
-          Control predictivo de conectores, terminales y componentes según historial de facturas y cobertura real en días.
+          Control predictivo de conectores, cables y componentes. Extrae automáticamente cantidades, descripciones y precios en USD desde tus facturas PDF de ProWireUSA.
         </p>
       </div>
 
@@ -693,12 +713,12 @@
       <!-- PANEL IZQUIERDO: IMPORTACIÓN Y CARRUSEL DE CARGAS -->
       <div class="reveal-on-scroll">
         <div class="import-panel">
-          <h2>Importar Compra</h2>
+          <h2>Importar Compra (Invoice)</h2>
           <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px; margin-top: 6px;">
-            Sube el archivo <strong>PDF</strong> o CSV de tu proveedor para actualizar el stock.
+            Sube el archivo <strong>PDF</strong> (ej. ProWireUSA) o CSV para actualizar el stock y capturar el último precio unitario en USD.
           </p>
 
-          <label>Fecha (Opcional - Se auto detecta)</label>
+          <label>Fecha (Opcional - Se auto detecta del PDF)</label>
           <input type="date" id="invoiceDate">
 
           <label>Cargar Archivo</label>
@@ -706,12 +726,12 @@
             <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:34px; height:34px; color:var(--accent-cyan);">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
             </svg>
-            <span class="file-msg" id="fileMsg">Haz clic o arrastra tu archivo .pdf o .csv aquí</span>
+            <span class="file-msg" id="fileMsg">Haz clic o arrastra tu Invoice .pdf o .csv aquí</span>
             <input class="file-input" type="file" id="invoiceFile" accept=".pdf, .csv, .txt" onchange="updateFileName()">
           </div>
 
           <button type="button" id="btnProcess" class="btn btn-block" onclick="processInvoiceFile()">
-            Leer Archivo y Procesar
+            Leer Archivo y Capturar Precios
           </button>
           <div id="importResult" style="margin-top: 16px; font-size: 0.85rem; color: var(--badge-green); font-weight: 700; display: none;"></div>
         </div>
@@ -770,6 +790,7 @@
             <thead>
               <tr>
                 <th class="sortable" onclick="setSort('sku')">SKU / Alias <span class="sort-icon" id="sort-sku"></span></th>
+                <th class="sortable" onclick="setSort('price')">Últ. Precio USD <span class="sort-icon" id="sort-price"></span></th>
                 <th class="sortable" onclick="setSort('history')">Historial <span class="sort-icon" id="sort-history"></span></th>
                 <th class="sortable" onclick="setSort('burn')">Consumo <span class="sort-icon" id="sort-burn"></span></th>
                 <th class="sortable" onclick="setSort('stock')">Stock Est. <span class="sort-icon" id="sort-stock"></span></th>
@@ -783,7 +804,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 8px;">
           <span id="hiddenCountMsg" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;"></span>
           <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0; text-align: right;">
-            * Haz clic en cualquier fila para abrir la proyección gráfica de consumo.
+            * Haz clic en el precio para editarlo manualmente o en cualquier fila para ver la curva de consumo.
           </p>
         </div>
       </div>
@@ -859,7 +880,7 @@
   }
 
   // =========================================================================
-  // LÓGICA DEL GESTOR DE COMPRAS & MOTOR PREDICTIVO (INTACTA)
+  // LÓGICA DEL GESTOR DE COMPRAS + CAPTURA DE PRECIOS PROWIREUSA
   // =========================================================================
   let inventory = JSON.parse(localStorage.getItem('loomtech_inventory')) || {};
   let loadedInvoices = JSON.parse(localStorage.getItem('loomtech_invoices')) || [];
@@ -884,7 +905,7 @@
       msg.innerText = `Archivo listo: ${input.files[0].name}`;
       msg.style.color = 'var(--badge-green)';
     } else {
-      msg.innerText = 'Haz clic o arrastra tu archivo .pdf o .csv aquí';
+      msg.innerText = 'Haz clic o arrastra tu Invoice .pdf o .csv aquí';
       msg.style.color = 'var(--text-muted)';
     }
   }
@@ -949,7 +970,7 @@
     const btn = document.getElementById('btnProcess');
     const res = document.getElementById('importResult');
     btn.innerText = "Procesando..."; btn.disabled = true;
-    res.innerText = "Extrayendo datos y analizando..."; res.style.color = '#fbbf24'; res.style.display = 'block';
+    res.innerText = "Extrayendo SKUs, cantidades y precios USD..."; res.style.color = '#fbbf24'; res.style.display = 'block';
 
     try {
       let extractedText = "";
@@ -964,20 +985,109 @@
       res.innerText = "Error al leer el archivo. Asegúrate de que contiene texto seleccionable.";
       res.style.color = '#ff6b6b';
     } finally {
-      btn.innerText = "Leer Archivo y Procesar"; btn.disabled = false;
+      btn.innerText = "Leer Archivo y Capturar Precios"; btn.disabled = false;
     }
+  }
+
+  // Analiza una línea extraída del PDF o CSV de ProWireUSA para extraer SKU, Cantidad, Precio Unitario y Unidad
+  function parseProWireRowTokens(tokens) {
+    if (!tokens || tokens.length < 3) return null;
+
+    // 1. La primera columna debe ser el número de línea (ej: 100, 200, 1000, 2700)
+    const lineNumStr = tokens[0].trim();
+    if (!/^\d+$/.test(lineNumStr)) return null;
+
+    // 2. Identificamos el SKU (normalmente en tokens[1], pero si en el PDF se invirtió con "1 EA", buscamos el primero que no sea cantidad con unidad)
+    const qtyUnitRegex = /^([\d,]+(?:\.\d+)?)\s*(EA|FT|PC|M|RL|PK|SET|IN|YD)$/i;
+    const priceUnitRegex = /^(\d+(?:\.\d+)?)\s*(EA|FT|PC|M|RL|PK|SET|IN|YD)?$/i;
+
+    let sku = "";
+    let restTokens = [];
+
+    if (!qtyUnitRegex.test(tokens[1])) {
+      sku = tokens[1].trim();
+      restTokens = tokens.slice(2);
+    } else if (tokens.length >= 4 && !qtyUnitRegex.test(tokens[2])) {
+      sku = tokens[2].trim();
+      restTokens = [tokens[1], ...tokens.slice(3)];
+    } else {
+      return null;
+    }
+
+    if (!sku || sku.toLowerCase() === 'item' || sku.toLowerCase() === 'line') return null;
+
+    let orderedQty = null;
+    let shippedQty = null;
+    let unitPrice = null;
+    let uom = "EA";
+
+    // Buscamos entre las columnas restantes: Ordered ("30 EA"), Shipped ("30"), Price ("1.359 EA") y Extension ("40.77")
+    const numericCandidates = [];
+
+    restTokens.forEach(tok => {
+      const cleanTok = tok.trim();
+      const mQtyUnit = cleanTok.match(/^([\d,]+)\s+(EA|FT|PC|M|RL|PK|SET|IN|YD)$/i);
+      const mDecUnit = cleanTok.match(/^(\d+\.\d+)\s*(EA|FT|PC|M|RL|PK|SET|IN|YD)$/i);
+      const mPureInt = cleanTok.match(/^([\d,]+)$/);
+      const mPureDec = cleanTok.match(/^(\d+\.\d+)$/);
+
+      if (mDecUnit) {
+        // Es explícitamente el precio unitario con unidad (ej. "1.359 EA" o "0.085 FT")
+        unitPrice = parseFloat(mDecUnit[1]);
+        uom = mDecUnit[2].toUpperCase();
+      } else if (mQtyUnit && orderedQty === null) {
+        // Es la cantidad pedida (ej. "30 EA" o "500 FT")
+        orderedQty = parseInt(mQtyUnit[1].replace(/,/g, ''), 10);
+        uom = mQtyUnit[2].toUpperCase();
+      } else if (mPureInt && shippedQty === null) {
+        // Es la cantidad enviada (ej. "30" o "500")
+        shippedQty = parseInt(mPureInt[1].replace(/,/g, ''), 10);
+      } else if (mPureDec) {
+        numericCandidates.push(parseFloat(mPureDec[1]));
+      }
+    });
+
+    const finalQty = (shippedQty !== null && !isNaN(shippedQty)) ? shippedQty : orderedQty;
+    if (!finalQty || finalQty <= 0) return null;
+
+    // Si el precio no tenía sufijo EA/FT y quedó en numericCandidates, lo deducimos comparando contra Extension (Qty * Price = Extension)
+    if (unitPrice === null && numericCandidates.length > 0) {
+      if (numericCandidates.length >= 2) {
+        // Probamos cuál multiplicado por finalQty da el otro
+        const [a, b] = numericCandidates;
+        if (Math.abs((a * finalQty) - b) < 0.15) {
+          unitPrice = a;
+        } else if (Math.abs((b * finalQty) - a) < 0.15) {
+          unitPrice = b;
+        } else {
+          unitPrice = a;
+        }
+      } else {
+        // Si solo hay un decimal al final (Extension), dividimos por finalQty
+        unitPrice = Number((numericCandidates[0] / finalQty).toFixed(4));
+      }
+    }
+
+    return {
+      sku: sku,
+      qty: finalQty,
+      unitPrice: unitPrice,
+      uom: uom
+    };
   }
 
   function processExtractedText(text, fileName) {
     let dateStr = document.getElementById('invoiceDate').value;
     
-    const dateRegex1 = /Date\s+(\d{2})\/(\d{2})\/(\d{4})/i;
-    const dateRegex2 = /"Date","?(\d{2})\/(\d{2})\/(\d{4})"?/i;
-    const dateMatch1 = dateRegex1.exec(text);
-    const dateMatch2 = dateRegex2.exec(text);
+    // Soporta tanto MM/DD/YYYY como MM/DD/YY (ej: "09/14/26" en Invoice-204900.pdf)
+    const dateRegex = /Date["\s,]+(\d{2})\/(\d{2})\/(\d{2,4})/i;
+    const dateMatch = dateRegex.exec(text);
     
-    if (dateMatch2) { dateStr = `${dateMatch2[3]}-${dateMatch2[1]}-${dateMatch2[2]}`; } 
-    else if (dateMatch1) { dateStr = `${dateMatch1[3]}-${dateMatch1[1]}-${dateMatch1[2]}`; }
+    if (dateMatch) {
+      let year = dateMatch[3];
+      if (year.length === 2) year = '20' + year;
+      dateStr = `${year}-${dateMatch[1]}-${dateMatch[2]}`;
+    }
 
     if (!dateStr) { 
       alert("No se pudo detectar la fecha automáticamente. Selecciónala manualmente en el calendario."); 
@@ -988,25 +1098,41 @@
     document.getElementById('invoiceDate').value = dateStr;
     const invoiceId = 'INV-' + Date.now();
     let itemsFound = 0;
+    let pricesCaptured = 0;
 
-    const regexCSV = /^"\d+","([^"]+)","([0-9\,]+)"/gm;
-    let matchCSV;
-    while ((matchCSV = regexCSV.exec(text)) !== null) {
-      const sku = matchCSV[1];
-      const qty = parseInt(matchCSV[2].replace(/,/g, ''), 10); 
-      addPurchase(sku, qty, dateStr, invoiceId);
-      itemsFound++;
-    }
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    if (itemsFound === 0) {
-      const cleanTextNoQuotes = text.replace(/["']/g, '');
-      const regexSpace = /^\s*\d+\s+([A-Za-z0-9\-\/]+)\s+([\d\,]+)\s+/gm;
-      let matchSpace;
-      while ((matchSpace = regexSpace.exec(cleanTextNoQuotes)) !== null) {
-        const sku = matchSpace[1];
-        const qty = parseInt(matchSpace[2].replace(/,/g, ''), 10); 
-        addPurchase(sku, qty, dateStr, invoiceId);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let tokens = [];
+
+      if (line.startsWith('"')) {
+        // Fila CSV generada por extractTextFromPDF
+        const matches = [...line.matchAll(/"([^"]*)"/g)].map(m => m[1].trim());
+        tokens = matches.filter(Boolean);
+      } else {
+        // Texto plano separado por espacios o comas
+        tokens = line.split(/\s{2,}|,/).map(s => s.trim()).filter(Boolean);
+      }
+
+      const parsed = parseProWireRowTokens(tokens);
+      if (parsed) {
+        // Intentamos capturar la línea siguiente como Descripción / Alias si es una fila de un solo texto descriptivo
+        let autoDesc = "";
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const nextTokens = nextLine.startsWith('"')
+            ? [...nextLine.matchAll(/"([^"]*)"/g)].map(m => m[1].trim()).filter(Boolean)
+            : [nextLine.replace(/["']/g, '').trim()];
+
+          if (nextTokens.length === 1 && !/^\d+$/.test(nextTokens[0]) && !/Invoice|Page|PROWIREUSA|Customer/i.test(nextTokens[0])) {
+            autoDesc = nextTokens[0];
+          }
+        }
+
+        addPurchase(parsed.sku, parsed.qty, dateStr, invoiceId, parsed.unitPrice, parsed.uom, autoDesc);
         itemsFound++;
+        if (parsed.unitPrice !== null && parsed.unitPrice > 0) pricesCaptured++;
       }
     }
 
@@ -1015,7 +1141,7 @@
       saveData();
       
       const res = document.getElementById('importResult');
-      res.innerText = `¡Éxito! Fecha: ${dateStr}. Se sumaron ${itemsFound} componentes.`;
+      res.innerText = `¡Éxito! Fecha: ${dateStr} • ${itemsFound} ítems sumados (${pricesCaptured} con precio USD actualizado).`;
       res.style.color = 'var(--badge-green)';
       
       document.getElementById('invoiceFile').value = ''; 
@@ -1023,17 +1149,67 @@
       renderInventory();
       renderInvoicesList();
       
-      setTimeout(() => res.style.display = 'none', 5000);
+      setTimeout(() => res.style.display = 'none', 6500);
     } else {
       const res = document.getElementById('importResult');
-      res.innerText = `No se detectaron productos válidos.`;
+      res.innerText = `No se detectaron productos válidos en el archivo.`;
       res.style.color = '#ff6b6b';
     }
   }
 
-  function addPurchase(sku, qty, dateStr, invoiceId) {
-    if (!inventory[sku]) { inventory[sku] = { sku: sku, alias: "", history: [], doNotTrack: false }; }
-    inventory[sku].history.push({ date: dateStr, qty: qty, invId: invoiceId });
+  function addPurchase(sku, qty, dateStr, invoiceId, unitPrice = null, uom = "EA", autoDesc = "") {
+    if (!inventory[sku]) {
+      inventory[sku] = {
+        sku: sku,
+        alias: (autoDesc && autoDesc !== sku) ? autoDesc : "",
+        unitPrice: unitPrice || 0,
+        uom: uom || "EA",
+        history: [],
+        doNotTrack: false
+      };
+    } else {
+      // Si el ítem no tenía alias aún y el PDF trajo descripción distinta al código, la guardamos
+      if (!inventory[sku].alias && autoDesc && autoDesc !== sku) {
+        inventory[sku].alias = autoDesc;
+      }
+      if (uom) inventory[sku].uom = uom;
+    }
+
+    inventory[sku].history.push({
+      date: dateStr,
+      qty: qty,
+      invId: invoiceId,
+      price: unitPrice
+    });
+
+    // Actualizamos unitPrice del ítem tomando siempre la compra de fecha más reciente que tenga precio
+    recalculateLatestPrice(sku);
+  }
+
+  function recalculateLatestPrice(sku) {
+    const item = inventory[sku];
+    if (!item || !Array.isArray(item.history)) return;
+    const sorted = [...item.history].sort((a, b) => new Date(a.date + "T12:00:00") - new Date(b.date + "T12:00:00"));
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i].price !== undefined && sorted[i].price !== null && sorted[i].price > 0) {
+        item.unitPrice = sorted[i].price;
+        break;
+      }
+    }
+  }
+
+  function editUnitPrice(event, sku) {
+    event.stopPropagation();
+    const currentPrice = inventory[sku].unitPrice || 0;
+    const newPriceStr = prompt(`Precio unitario en USD para ${sku}:`, currentPrice);
+    if (newPriceStr !== null) {
+      const val = parseFloat(newPriceStr.replace(',', '.'));
+      if (!isNaN(val) && val >= 0) {
+        inventory[sku].unitPrice = val;
+        saveData();
+        renderInventory();
+      }
+    }
   }
 
   function renderInvoicesList() {
@@ -1065,7 +1241,11 @@
     const keys = Object.keys(inventory);
     keys.forEach(sku => {
       inventory[sku].history = inventory[sku].history.filter(h => h.invId !== id);
-      if(inventory[sku].history.length === 0) { delete inventory[sku]; }
+      if(inventory[sku].history.length === 0) {
+        delete inventory[sku];
+      } else {
+        recalculateLatestPrice(sku);
+      }
     });
 
     saveData();
@@ -1240,7 +1420,6 @@
 
     const keys = Object.keys(inventory);
 
-    // Actualizar KPIs globales en el Hero
     let countUrgent = 0, countAlert = 0, countOk = 0;
     keys.forEach(k => {
       const st = calculatePredictiveStatus(inventory[k]);
@@ -1255,7 +1434,7 @@
     document.getElementById('kpiOk').innerText = countOk;
 
     if (keys.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 40px;">El radar está vacío. Sube tu primer archivo PDF o CSV en el panel izquierdo.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 40px;">El radar está vacío. Sube tu primer archivo PDF o CSV en el panel izquierdo.</td></tr>';
       return;
     }
 
@@ -1287,7 +1466,7 @@
       const emptyText = hiddenCount > 0 
         ? `No hay ítems activos para mostrar (${hiddenCount} inactivos ocultos). Destilda "Ocultar Inactivos" para verlos.`
         : `No hay resultados para "${searchTerm}".`;
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 40px;">${emptyText}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 40px;">${emptyText}</td></tr>`;
       return;
     }
 
@@ -1297,6 +1476,10 @@
         case 'sku':
           valA = (a.item.alias || a.item.sku).toLowerCase();
           valB = (b.item.alias || b.item.sku).toLowerCase();
+          break;
+        case 'price':
+          valA = a.item.unitPrice || 0;
+          valB = b.item.unitPrice || 0;
           break;
         case 'history':
           valA = a.item.history.length;
@@ -1335,7 +1518,12 @@
         : `<strong style="color: #fff;">${item.sku}</strong>`;
       
       const displayBurn = stats.dailyBurn > 0 ? `${(stats.dailyBurn * frameDays).toFixed(1)} U` : '-';
-      
+      const hasPrice = item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0;
+      const uomLabel = item.uom ? `/${item.uom}` : '';
+      const priceHtml = hasPrice
+        ? `<span class="price-badge" onclick="editUnitPrice(event, '${item.sku}')" title="Clic para editar precio USD">$${Number(item.unitPrice).toFixed(3)}${uomLabel}</span>`
+        : `<span class="price-badge" style="opacity:0.45;" onclick="editUnitPrice(event, '${item.sku}')" title="Sin precio asignado. Clic para cargar">$ -</span>`;
+
       const row = document.createElement('tr');
       row.className = 'table-row-clickable';
       if (stats.isInactive) row.style.opacity = '0.45';
@@ -1352,6 +1540,7 @@
             <button class="btn-edit-alias" onclick="toggleTracking(event, '${item.sku}')" title="${trackTitle}">${trackIcon}</button>
           </div>
         </td>
+        <td>${priceHtml}</td>
         <td style="color: var(--text-muted); font-weight: 600;">${buyCount} fact.</td>
         <td style="color: var(--badge-green); font-family: monospace; font-size: 0.95rem; font-weight: 700;">${displayBurn}</td>
         <td style="font-weight: 800; font-size: 1.1rem; color: #fff;">${stats.estStock}</td>

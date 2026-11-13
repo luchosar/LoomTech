@@ -212,7 +212,7 @@
     .hero-content {
       position: relative;
       z-index: 1;
-      max-width: 680px;
+      max-width: 740px;
     }
 
     .hero-eyebrow {
@@ -250,7 +250,7 @@
       color: #cbd5e1;
       font-size: clamp(0.92rem, 1.5vw, 1.05rem);
       font-weight: 500;
-      max-width: 560px;
+      max-width: 600px;
       line-height: 1.55;
     }
 
@@ -670,6 +670,7 @@
       </a>
 
       <div class="nav-links">
+        <a href="presupuestador.html" class="nav-pill">Cotizador</a>
         <a href="facturador.html" class="nav-pill">Comprobantes</a>
         <a href="gestor-compras.html" class="nav-pill">Gestor de Compras</a>
         <a href="cableados.html" class="nav-pill">Pinouts & Mazos</a>
@@ -702,11 +703,20 @@
         </div>
         <h2 class="interactive-title" id="interactiveTitle">Módulos y Herramientas</h2>
         <p class="hero-subtitle">
-          Gestión integral para electrónica de competición: presupuestos y órdenes de trabajo, control predictivo de stock de insumos y conversión bidireccional de planos de cableado.
+          Gestión integral para electrónica de competición: cotizador técnico de proyectos, emisión de comprobantes, control predictivo de stock con precios ProWireUSA y conversión bidireccional de planos de cableado.
         </p>
 
         <!-- Accesos rápidos en píldoras -->
         <div class="quick-pills">
+          <a href="presupuestador.html" class="quick-pill">
+            <span class="quick-pill-icon">
+              <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+            </span>
+            Cotizador de Mazos
+          </a>
+
           <a href="facturador.html" class="quick-pill">
             <span class="quick-pill-icon">
               <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -767,7 +777,32 @@
     <!-- CARRUSEL HORIZONTAL CON SCROLL SUAVE DE TARJETAS -->
     <div class="tools-track" id="toolsTrack">
 
-      <!-- Tarjeta 1: Facturación -->
+      <!-- Tarjeta 1: Cotizador de Presupuestos (NUEVA HERRAMIENTA) -->
+      <a href="presupuestador.html" class="tool-card reveal-on-scroll">
+        <div class="card-accent-bar"></div>
+        <div class="card-top">
+          <div class="icon-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <span class="tag-state tag-active">Activo</span>
+        </div>
+        <div class="card-body">
+          <h3>Cotizador de Presupuestos</h3>
+          <p>Cálculo de materiales vinculado al Gestor de Compras y precios ProWireUSA, horas de mano de obra, envío, impuestos y exportación a Excel.</p>
+        </div>
+        <div class="card-footer">
+          <div class="card-action">Abrir aplicación</div>
+          <div class="play-launch-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </a>
+
+      <!-- Tarjeta 2: Facturación -->
       <a href="facturador.html" class="tool-card reveal-on-scroll">
         <div class="card-accent-bar"></div>
         <div class="card-top">
@@ -792,7 +827,7 @@
         </div>
       </a>
 
-      <!-- Tarjeta 2: Gestor de Compras -->
+      <!-- Tarjeta 3: Gestor de Compras -->
       <a href="gestor-compras.html" class="tool-card reveal-on-scroll">
         <div class="card-accent-bar"></div>
         <div class="card-top">
@@ -804,8 +839,8 @@
           <span class="tag-state tag-active">Activo</span>
         </div>
         <div class="card-body">
-          <h3>Gestor de compras</h3>
-          <p>Cálculo de existencias según historial y recordatorios de compra.</p>
+          <h3>Gestor de Compras & Precios</h3>
+          <p>Cálculo predictivo de existencias según historial de facturas ProWireUSA, captura de precios USD y alertas de reposición.</p>
         </div>
         <div class="card-footer">
           <div class="card-action">Abrir aplicación</div>
@@ -817,7 +852,7 @@
         </div>
       </a>
 
-      <!-- Tarjeta 3: Unificador y Conversor de Pinouts -->
+      <!-- Tarjeta 4: Unificador y Conversor de Pinouts -->
       <a href="cableados.html" class="tool-card reveal-on-scroll">
         <div class="card-accent-bar"></div>
         <div class="card-top">
@@ -842,7 +877,7 @@
         </div>
       </a>
 
-      <!-- Tarjeta 4: Setup & Set de Neumáticos (Próximamente) -->
+      <!-- Tarjeta 5: Setup & Set de Neumáticos (Próximamente) -->
       <div class="tool-card disabled reveal-on-scroll">
         <div class="card-top">
           <div class="icon-box">
@@ -871,7 +906,7 @@
     <p>&copy; LoomTech Motorsport — Electrónica y Servicios de Competición. Córdoba, Argentina.</p>
   </footer>
 
-  <!-- SCRIPTS DE INTERACCIÓN Y ANIMACIONES LIGERA SIN DEPENDENCIAS PESADAS -->
+  <!-- SCRIPTS DE INTERACCIÓN Y ANIMACIONES LIGERAS SIN DEPENDENCIAS PESADAS -->
   <script>
     // 1. Efecto de barra de navegación al hacer scroll
     const mainNav = document.getElementById('mainNav');
